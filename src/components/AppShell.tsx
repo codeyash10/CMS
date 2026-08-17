@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/publish", label: "Publish queue", permission: "blog.publish" },
   { href: "/users", label: "Users", permission: "user.manage" },
   { href: "/audit-logs", label: "Audit log", permission: "audit.view_company" },
+  { href: "/change-password", label: "Change password", permission: null },
 ] as const;
 
 export function AppShell({ children }: { children: React.ReactNode }) {
