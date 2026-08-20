@@ -4,21 +4,25 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { BlogForm, BlogFormValues } from "@/components/BlogForm";
+import { Button } from "@/components/ui/Button";
 import { useCreateBlog } from "@/hooks/useBlogs";
 import { ApiError } from "@/lib/api";
+import { useToast } from "@/components/ToastProvider";
 
 export default function NewBlogPage() {
   const { activeCompanyId } = useAuth();
   const router = useRouter();
   const createBlog = useCreateBlog();
+  const { showToast } = useToast();
 
   async function handleSave(values: BlogFormValues) {
     if (!activeCompanyId) return;
     try {
       const blog = await createBlog.mutateAsync({ companyId: activeCompanyId, ...values });
+      showToast("Draft saved.");
       router.push(`/blogs/${blog.id}`);
-    } catch {
-      // surfaced via createBlog.error below
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Couldn't save the post.", "error");
     }
   }
 
@@ -27,14 +31,19 @@ export default function NewBlogPage() {
 
   return (
     <AuthenticatedShell>
-      <div className="max-w-2xl">
-        <h1 className="text-xl font-semibold text-ink mb-6">New post</h1>
+      <div className="w-full">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold text-ink">New post</h1>
+          <Button type="submit" form="new-blog-form" variant="primary" disabled={createBlog.isPending}>
+            {createBlog.isPending ? "Saving..." : "Save draft"}
+          </Button>
+        </div>
         {error && (
           <p className="mb-4 text-sm text-status-rejected bg-status-rejected/10 border border-status-rejected/20 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
-        <BlogForm onSave={handleSave} saving={createBlog.isPending} />
+        <BlogForm formId="new-blog-form" hideSubmit onSave={handleSave} saving={createBlog.isPending} />
       </div>
     </AuthenticatedShell>
   );

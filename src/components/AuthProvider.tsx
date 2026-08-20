@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi, type AuthUser } from "@/lib/auth-api";
+import { getStoredAccessToken } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { loginSchema, registerSchema } from "@/lib/schemas/auth";
 
@@ -26,20 +27,32 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const AUTH_INITIALIZING = "__cms_auth_initializing__";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null);
   const router = useRouter();
   const queryClient = useQueryClient();
+  const authTokenSnapshot = useSyncExternalStore<string | null>(
+    (onStoreChange) => {
+      window.addEventListener("storage", onStoreChange);
+      return () => window.removeEventListener("storage", onStoreChange);
+    },
+    getStoredAccessToken,
+    () => AUTH_INITIALIZING
+  );
+  const authInitialized = authTokenSnapshot !== AUTH_INITIALIZING;
+  const accessToken = authInitialized ? authTokenSnapshot : null;
 
   const meQuery = useQuery({
     queryKey: queryKeys.me,
     queryFn: () => authApi.me(),
     retry: false,
+    enabled: authInitialized && Boolean(accessToken),
   });
 
   const user = meQuery.data ?? null;
-  const loading = meQuery.isLoading;
+  const loading = !authInitialized || (Boolean(accessToken) && meQuery.isLoading);
   const resolvedActiveCompanyId = activeCompanyId ?? user?.companies[0]?.id ?? null;
 
   const loginMutation = useMutation({

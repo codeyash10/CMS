@@ -1,4 +1,5 @@
 import {
+  ApiError,
   api,
   clearStoredAuthTokens,
   getStoredRefreshToken,
@@ -141,11 +142,20 @@ export const authApi = {
     try {
       return await this.fetchMe();
     } catch (error) {
-      if (!(error instanceof Error && "status" in error && error.status === 401) || !getStoredRefreshToken()) {
+      if (!(error instanceof ApiError) || error.status !== 401) {
         throw error;
       }
-      await this.refresh();
-      return this.fetchMe();
+      if (!getStoredRefreshToken()) {
+        clearStoredAuthTokens();
+        throw error;
+      }
+      try {
+        await this.refresh();
+        return await this.fetchMe();
+      } catch (refreshError) {
+        clearStoredAuthTokens();
+        throw refreshError;
+      }
     }
   },
   async fetchMe() {
@@ -178,6 +188,8 @@ export const authApi = {
   async logout() {
     try {
       await api.post("/api/v1/auth/logout", {});
+    } catch {
+      // A missing or expired token should still complete a local logout.
     } finally {
       clearStoredAuthTokens();
     }

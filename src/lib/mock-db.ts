@@ -76,6 +76,7 @@ export interface Blog {
   slug: string;
   excerpt: string;
   content: string;
+  coverImageUrls?: string[];
   coverImageUrl?: string;
   categoryId?: string;
   tags: string[];
