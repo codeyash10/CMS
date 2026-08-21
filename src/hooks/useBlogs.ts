@@ -20,6 +20,11 @@ function normalizeImageUrls(blog: BackendBlog) {
   if (Array.isArray(blog.coverImageUrls)) return blog.coverImageUrls;
   return blog.coverImageUrl ? [blog.coverImageUrl] : [];
 }
+
+function normalizeStringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 function normalizeBlog(blog: (Partial<BackendBlog> & { reviews?: Blog["reviews"] } & { blog?: Partial<BackendBlog> }) | null | undefined): Blog {
   const source = (blog && "blog" in blog && blog.blog ? blog.blog : blog) ?? {};
   const coverImageUrls = normalizeImageUrls(source as BackendBlog);
@@ -29,10 +34,19 @@ function normalizeBlog(blog: (Partial<BackendBlog> & { reviews?: Blog["reviews"]
     status: statusMap[statusKey] ?? "draft",
     coverImageUrls,
     coverImageUrl: coverImageUrls[0],
-    tags: (source as Partial<BackendBlog>).tags ?? [],
-    reviews: (source as Partial<Blog>).reviews ?? [],
+    tags: normalizeStringArray((source as Partial<BackendBlog>).tags),
+    reviews: Array.isArray((source as Partial<Blog>).reviews) ? ((source as Partial<Blog>).reviews as Blog["reviews"]) : [],
   };
 }
+
+function normalizeBlogArray(response: BackendListResponse | { blogs?: BackendBlog[]; data?: BackendBlog[] } | BackendBlog[] | null | undefined) {
+  if (Array.isArray(response)) return response;
+  if (!response || typeof response !== "object") return [];
+  if (Array.isArray((response as BackendListResponse).data)) return (response as BackendListResponse).data;
+  if (Array.isArray((response as { blogs?: BackendBlog[] }).blogs)) return (response as { blogs?: BackendBlog[] }).blogs ?? [];
+  return [];
+}
+
 function getResponseBlog(response: BackendItemResponse) {
   const payload = response.data ?? response.blog;
   if (!payload) throw new Error("The review was saved, but the backend did not return the updated blog.");
@@ -42,14 +56,22 @@ function toBackendPayload(input: CreateBlogInput | UpdateBlogInput) { const payl
 function useInvalidateBlogLists() { const queryClient = useQueryClient(); return () => { queryClient.invalidateQueries({ queryKey: ["blogs"] }); queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] }); queryClient.invalidateQueries({ queryKey: ["audit-logs"] }); }; }
 function replaceBlogInLists(queryClient: ReturnType<typeof useQueryClient>, blog: Blog) {
   queryClient.getQueriesData<Blog[]>({ queryKey: ["blogs"] }).forEach(([key, current]) => {
+    if (!Array.isArray(current)) return;
     const status = key[2] as BlogStatus | undefined;
-    const next = (current ?? []).map((item) => item.id === blog.id ? blog : item).filter((item) => !status || item.status === status);
+    const next = current.map((item) => item.id === blog.id ? blog : item).filter((item) => !status || item.status === status);
     queryClient.setQueryData(key, next);
   });
 }
 
 export function useBlogs(companyId: string | null, status?: BlogStatus | "") {
-  return useQuery({ queryKey: queryKeys.blogs(companyId, status || undefined), queryFn: async () => { const response = await api.get<BackendListResponse>("/api/v1/blogs"); return response.data.map(normalizeBlog).filter((blog) => (!companyId || blog.companyId === companyId) && (!status || blog.status === status)); }, enabled: Boolean(companyId) });
+  return useQuery({
+    queryKey: queryKeys.blogs(companyId, status || undefined),
+    queryFn: async () => {
+      const response = await api.get<BackendListResponse | { blogs?: BackendBlog[]; data?: BackendBlog[] } | BackendBlog[]>("/api/v1/blogs");
+      return normalizeBlogArray(response).map(normalizeBlog).filter((blog) => (!companyId || blog.companyId === companyId) && (!status || blog.status === status));
+    },
+    enabled: Boolean(companyId),
+  });
 }
 
 export function usePaginatedBlogs(companyId: string | null, status: BlogStatus | "", page: number, limit = 10) {
@@ -59,11 +81,11 @@ export function usePaginatedBlogs(companyId: string | null, status: BlogStatus |
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (companyId) params.set("companyId", companyId);
       if (status) params.set("status", backendStatusMap[status]);
-      const response = await api.get<BackendListResponse>(`/api/v1/blogs?${params.toString()}`);
-      const blogs = response.data.map(normalizeBlog);
+      const response = await api.get<BackendListResponse | { blogs?: BackendBlog[]; data?: BackendBlog[] } | BackendBlog[]>(`/api/v1/blogs?${params.toString()}`);
+      const blogs = normalizeBlogArray(response).map(normalizeBlog);
       return {
         blogs,
-        pagination: response.pagination ?? { page, limit, totalItems: blogs.length, totalPages: 1 },
+        pagination: !Array.isArray(response) && "pagination" in response && response.pagination ? response.pagination : { page, limit, totalItems: blogs.length, totalPages: 1 },
       };
     },
     enabled: Boolean(companyId),
@@ -71,7 +93,23 @@ export function usePaginatedBlogs(companyId: string | null, status: BlogStatus |
 }
 
 export function useBlog(id: string) {
-  return useQuery({ queryKey: queryKeys.blog(id), queryFn: async () => { const response = await api.get<BackendListResponse>("/api/v1/blogs"); const blog = response.data.find((item) => item.id === id); if (!blog) throw new Error("Blog not found."); return normalizeBlog(blog); }, enabled: Boolean(id) });
+  return useQuery({
+    queryKey: queryKeys.blog(id),
+    queryFn: async () => {
+      const response = await api.get<BackendItemResponse | BackendBlog | { blog?: BackendBlog }>(`/api/v1/blogs/${id}`);
+      const payload =
+        Array.isArray(response)
+          ? response.find((item) => item.id === id)
+          : "blog" in response && response.blog
+            ? response.blog
+            : "data" in response && response.data && !Array.isArray(response.data)
+              ? response.data
+              : (response as BackendBlog);
+      if (!payload) throw new Error("Blog not found.");
+      return normalizeBlog(payload as BackendBlog);
+    },
+    enabled: Boolean(id),
+  });
 }
 
 export function useCreateBlog() {

@@ -104,6 +104,7 @@ export default function BlogDetailPage() {
   const canReview = hasPermission("blog.review") && blog.status === "submitted_for_review";
   const canPublish = hasPermission("blog.publish") && blog.status === "approved";
   const canUnpublish = hasPermission("blog.publish") && blog.status === "published";
+  const reviewFeedback = Array.isArray(blog.reviews) ? blog.reviews.filter((review) => review.comment?.trim()) : [];
 
   return (
     <AuthenticatedShell>
@@ -183,11 +184,11 @@ export default function BlogDetailPage() {
             </div>
           )}
 
-          {blog.reviews.filter((review) => review.comment?.trim()).length > 0 && (
+          {reviewFeedback.length > 0 && (
             <div className="mt-5 border-t border-line pt-5">
               <h3 className="text-sm font-semibold text-ink">Review feedback</h3>
               <div className="mt-3 space-y-3">
-                {blog.reviews.filter((review) => review.comment?.trim()).map((review) => (
+                {reviewFeedback.map((review) => (
                   <div key={review.id} className="rounded-lg border border-line bg-canvas px-3 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-medium capitalize text-ink">{review.action}</span>
