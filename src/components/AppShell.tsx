@@ -25,6 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [profileOpen, setProfileOpen] = useState(false);
 
   if (!user) return null;
+  console.log("user", user);
 
   return (
     <div className="min-h-screen bg-canvas md:grid md:grid-cols-[280px_minmax(0,1fr)]">
