@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/review", label: "Review queue", permission: "blog.review" },
   { href: "/publish", label: "Publish queue", permission: "blog.publish" },
   { href: "/users", label: "Users", permission: "user.manage" },
+  { href: "/companies", label: "Companies", permission: "company.manage" },
   { href: "/audit-logs", label: "Audit log", permission: "audit.view_company" },
 ] as const;
 

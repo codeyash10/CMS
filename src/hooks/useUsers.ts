@@ -9,12 +9,23 @@ export interface UserRow {
   name: string;
   email: string;
   isActive: boolean;
-  role: { label: string } | null;
+  role: { id?: string; key?: string; label: string } | string | null;
+}
+
+type UsersResponse =
+  | { status?: number; message?: string; data?: UserRow[]; users?: UserRow[] }
+  | UserRow[];
+
+function normalizeUsersResponse(response: UsersResponse) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.data)) return response.data;
+  if (Array.isArray(response.users)) return response.users;
+  return [];
 }
 
 export function useUsers() {
   return useQuery({
     queryKey: queryKeys.users,
-    queryFn: async () => (await api.get<{ users: UserRow[] }>("/api/users")).users,
+    queryFn: async () => normalizeUsersResponse(await api.get<UsersResponse>("/api/v1/users")),
   });
 }
