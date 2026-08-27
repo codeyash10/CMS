@@ -34,7 +34,7 @@ export function RichTextEditor({ value, onChange, disabled }: { value: string; o
     if (!file.type.startsWith("image/")) { setUploadError("Choose an image file."); return; }
     if (file.size > MAX_IMAGE_SIZE_BYTES) { setUploadError("Images must be 10MB or smaller."); return; }
     setUploading(true); setUploadError(null);
-    try { editor.chain().focus().setImage({ src: await uploadBlogImage(file), alt: file.name }).run(); }
+    try { const { url } = await uploadBlogImage(file); editor.chain().focus().setImage({ src: url, alt: file.name }).run(); }
     catch (error) { setUploadError(error instanceof Error ? error.message : "Could not upload image."); }
     finally { setUploading(false); }
   }

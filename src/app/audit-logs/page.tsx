@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { useAuth } from "@/components/AuthProvider";
 import { useAuditLogs } from "@/hooks/useAuditLogs";
+import { useBlogs } from "@/hooks/useBlogs";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
@@ -22,9 +23,14 @@ export default function AuditLogsPage() {
     entityType,
     action,
   });
+  // The audit-log API only returns entity ids, not titles — cross-reference
+  // against the company's blogs so "blog" rows can show a name.
+  const { data: blogs } = useBlogs(activeCompanyId, "");
+  const blogTitleById = useMemo(() => new Map((blogs ?? []).map((blog) => [blog.id, blog.title])), [blogs]);
 
   const logs = data?.logs ?? [];
   const pagination = data?.pagination ?? { page, limit: PAGE_SIZE, totalItems: 0, totalPages: 1 };
+  const displayTotalPages = Math.max(1, pagination.totalPages);
 
   const actions = useMemo(
     () => [
@@ -83,6 +89,7 @@ export default function AuditLogsPage() {
               <tr>
                 <th className="px-5 py-3">Action</th>
                 <th className="px-5 py-3">Entity</th>
+                <th className="px-5 py-3">Blog</th>
                 <th className="px-5 py-3">User</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Comment</th>
@@ -93,14 +100,14 @@ export default function AuditLogsPage() {
               {isLoading ? (
                 Array.from({ length: PAGE_SIZE }).map((_, index) => (
                   <tr key={index} className="border-b border-line last:border-b-0">
-                    <td className="px-5 py-4" colSpan={6}>
+                    <td className="px-5 py-4" colSpan={7}>
                       <div className="h-4 w-full animate-pulse rounded bg-ink/5" />
                     </td>
                   </tr>
                 ))
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-ink/50">
+                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-ink/50">
                     No audit activity found.
                   </td>
                 </tr>
@@ -115,6 +122,9 @@ export default function AuditLogsPage() {
                         <span className="capitalize">{log.entityType}</span>
                         <span className="font-mono text-xs text-ink/45">{log.entityId}</span>
                       </div>
+                    </td>
+                    <td className="px-5 py-4 text-ink/70">
+                      {log.entityType === "blog" ? blogTitleById.get(log.entityId) ?? <span className="text-xs text-ink/45">—</span> : <span className="text-xs text-ink/45">—</span>}
                     </td>
                     <td className="px-5 py-4 text-ink/70">
                       <div className="flex flex-col gap-0.5">
@@ -146,7 +156,7 @@ export default function AuditLogsPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4">
           <p className="text-sm text-ink/55">
-            Page {pagination.page} of {pagination.totalPages}
+            Page {pagination.page} of {displayTotalPages}
           </p>
           <div className="flex gap-2">
             <button

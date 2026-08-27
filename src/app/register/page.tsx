@@ -6,7 +6,6 @@ import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api";
-import { useToast } from "@/components/ToastProvider";
 
 const ROLE_OPTIONS = [
   { label: "Admin", value: "admin" },
@@ -21,13 +20,13 @@ export default function RegisterPage() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<(typeof ROLE_OPTIONS)[number]["value"]>("editor");
+  const [role, setRole] = useState<(typeof ROLE_OPTIONS)[number]["value"] | "">("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!role) { setError("Select a role."); return; }
     setError(null);
     setSubmitting(true);
 
@@ -36,7 +35,6 @@ export default function RegisterPage() {
     } catch (err) {
       const message = err instanceof ApiError || err instanceof Error ? err.message : "Something went wrong. Try again.";
       setError(message);
-      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -45,9 +43,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
       <div className="hidden lg:flex flex-col justify-between bg-[#0c1a35] text-white px-14 py-12">
-        <div className="font-mono text-xs uppercase tracking-[0.2em] text-white/50">
-          Crediple / Blog CMS
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/crediple_dark.png" alt="Crediple" className="h-7 w-auto" />
 
         <div>
           <h1 className="font-heading text-3xl font-semibold leading-tight mb-5 max-w-sm">
@@ -59,7 +56,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <p className="text-xs text-white/40 font-mono">v1 — backend auth connected</p>
+        <div />
       </div>
 
       <div className="flex items-center justify-center px-6 py-16 bg-canvas">
@@ -138,6 +135,9 @@ export default function RegisterPage() {
                 onChange={(e) => setRole(e.target.value as (typeof ROLE_OPTIONS)[number]["value"])}
                 className="h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm text-ink outline-none transition-colors hover:border-accent/60 focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
+                <option value="" disabled>
+                  Select a role
+                </option>
                 {ROLE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}

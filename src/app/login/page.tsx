@@ -6,7 +6,6 @@ import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api";
-import { useToast } from "@/components/ToastProvider";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -25,14 +23,15 @@ export default function LoginPage() {
     } catch (err) {
       const message = err instanceof ApiError || err instanceof Error ? err.message : "Something went wrong. Try again.";
       setError(message);
-      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }
   }
 
   return <main className="min-h-screen flex items-center justify-center bg-canvas px-6 py-16"><div className="w-full max-w-sm">
-    <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink/40">Crediple / Blog CMS</p>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src="/brand/crediple_light.png" alt="Crediple" className="h-7 w-auto" />
+    <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-ink/40">Blog CMS</p>
     <h1 className="mt-4 font-heading text-2xl font-semibold text-ink">Sign in</h1>
     <p className="mt-1 mb-8 text-sm text-ink/60">Access your company&apos;s blog workspace.</p>
     <form onSubmit={handleSubmit} className="space-y-4">

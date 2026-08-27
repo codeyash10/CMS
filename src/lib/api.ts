@@ -53,7 +53,51 @@ function resolveApiUrl(path: string) {
   return API_BASE_URL && path.startsWith("/api/v1") ? `${API_BASE_URL}${path}` : path;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+let refreshInFlight: Promise<boolean> | null = null;
+
+/** Refreshes the access token using the stored refresh token. De-duped so concurrent 401s only trigger one refresh call. */
+async function refreshAccessToken(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    const refreshToken = getStoredRefreshToken();
+    if (!refreshToken) return false;
+    try {
+      const url = resolveApiUrl("/api/v1/auth/refresh");
+      const isBackendRequest = url.startsWith("http://") || url.startsWith("https://");
+      const res = await fetch(url, {
+        method: "POST",
+        credentials: isBackendRequest ? "omit" : "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(isBackendRequest ? { "ngrok-skip-browser-warning": "true" } : {}),
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      });
+      if (!res.ok) {
+        clearStoredAuthTokens();
+        return false;
+      }
+      const body = await res.json().catch(() => null);
+      const accessToken = body?.data?.accessToken;
+      if (!accessToken) {
+        clearStoredAuthTokens();
+        return false;
+      }
+      setStoredAuthTokens({ accessToken, refreshToken: body?.data?.refreshToken });
+      return true;
+    } catch {
+      clearStoredAuthTokens();
+      return false;
+    }
+  })();
+  try {
+    return await refreshInFlight;
+  } finally {
+    refreshInFlight = null;
+  }
+}
+
+async function request<T>(path: string, options: RequestInit = {}, isRetry = false): Promise<T> {
   const accessToken = getStoredAccessToken();
   const url = resolveApiUrl(path);
   const isBackendRequest = url.startsWith("http://") || url.startsWith("https://");
@@ -68,6 +112,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...(options.headers ?? {}),
     },
   });
+
+  // An expired access token surfaces as a 401 well after login ("unauthorized
+  // after some time"). Refresh once and retry, instead of failing outright —
+  // but never for the auth endpoints themselves (would loop / isn't a stale-token case).
+  if (res.status === 401 && !isRetry && !path.startsWith("/api/v1/auth/") && getStoredRefreshToken()) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) return request<T>(path, options, true);
+  }
 
   const isJson = res.headers.get("content-type")?.includes("application/json");
   const body = isJson ? await res.json().catch(() => null) : null;

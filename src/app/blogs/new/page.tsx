@@ -21,8 +21,8 @@ export default function NewBlogPage() {
       const blog = await createBlog.mutateAsync({ companyId: activeCompanyId, ...values });
       showToast("Draft saved.");
       router.push(`/blogs/${blog.id}`);
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Couldn't save the post.", "error");
+    } catch {
+      /* surfaced via the inline error banner below */
     }
   }
 

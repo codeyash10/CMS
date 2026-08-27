@@ -25,14 +25,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [profileOpen, setProfileOpen] = useState(false);
 
   if (!user) return null;
-  console.log("user", user);
 
   return (
     <div className="min-h-screen bg-canvas md:grid md:grid-cols-[280px_minmax(0,1fr)]">
       {drawerOpen && <button aria-label="Close navigation" onClick={() => setDrawerOpen(false)} className="fixed inset-0 z-30 bg-ink/50 md:hidden" />}
-      <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-[#0c1a35] text-white transition-transform md:sticky md:top-0 md:h-screen md:w-auto md:self-start md:translate-x-0", drawerOpen && "translate-x-0")}>
+      <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-[280px] -translate-x-full flex-col bg-[#0c1a35] text-white transition-transform md:sticky md:top-0 md:h-screen md:self-start md:translate-x-0", drawerOpen && "translate-x-0")}>
         <div className="px-5 py-5 border-b border-white/10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Crediple</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/crediple_dark.png" alt="Crediple" className="h-6 w-auto mb-2" />
           <p className="font-heading font-semibold">Blog CMS</p>
         </div>
 

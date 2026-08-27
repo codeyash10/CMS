@@ -1,14 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { useDashboardSummary } from "@/hooks/useDashboardSummary";
+import { useBlogs } from "@/hooks/useBlogs";
 
 export default function DashboardPage() {
   const { activeCompanyId, user } = useAuth();
   const canFilterByCompany = user?.role?.key === "super_admin";
   const { data: summary, isLoading, error } = useDashboardSummary(activeCompanyId, canFilterByCompany);
+  // The activity feed only carries an entity id — cross-reference against
+  // the company's blogs so each row can show which post it was.
+  const { data: blogs } = useBlogs(activeCompanyId, "");
+  const blogTitleById = useMemo(() => new Map((blogs ?? []).map((blog) => [blog.id, blog.title])), [blogs]);
 
   return (
     <AuthenticatedShell>
@@ -47,14 +53,27 @@ export default function DashboardPage() {
           <h2 className="text-sm font-medium text-ink/80 mb-3">Recent activity</h2>
           <ul className="bg-panel border border-line rounded-lg divide-y divide-line">
             {summary?.recentActivity.length ? (
-              summary.recentActivity.map((l) => (
-                <li key={l.id} className="px-4 py-3 text-sm flex justify-between">
-                  <span className="capitalize">{l.action.replace(/_/g, " ")}</span>
-                  <span className="text-xs text-ink/40 font-mono">
-                    {new Date(l.createdAt).toLocaleTimeString()}
-                  </span>
-                </li>
-              ))
+              summary.recentActivity.map((l) => {
+                const blogTitle = blogTitleById.get(l.entityId);
+                return (
+                  <li key={l.id} className="px-4 py-3 text-sm flex items-center justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="capitalize">{l.action.replace(/_/g, " ")}</span>
+                      {blogTitle && (
+                        <>
+                          {" — "}
+                          <Link href={`/blogs/${l.entityId}`} className="truncate hover:text-accent">
+                            {blogTitle}
+                          </Link>
+                        </>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-xs text-ink/40 font-mono">
+                      {new Date(l.createdAt).toLocaleTimeString()}
+                    </span>
+                  </li>
+                );
+              })
             ) : (
               <li className="px-4 py-6 text-sm text-ink/40 text-center">No activity yet.</li>
             )}

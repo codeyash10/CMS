@@ -54,9 +54,9 @@ export async function PATCH(
   }
 
   Object.assign(blog, parsed.data);
-  if (parsed.data.coverImageUrl) {
-    blog.coverImageUrls = parsed.data.coverImageUrl;
-    blog.coverImageUrl = parsed.data.coverImageUrl[0];
+  if (parsed.data.coverImageKey) {
+    blog.coverImageUrls = parsed.data.coverImageKey;
+    blog.coverImageUrl = parsed.data.coverImageKey[0];
   }
   blog.updatedAt = new Date().toISOString();
 

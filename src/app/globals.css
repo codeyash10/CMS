@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -134,3 +135,11 @@ h1, h2, h3, h4, h5, h6 {
 .rich-text-editor img, .article-content img { border-radius: 0.5rem; max-width: 100%; }
 .article-content > * + * { margin-top: 1rem; }
 .article-content h1 { font-family: var(--font-jakarta), sans-serif; font-size: 1.5rem; font-weight: 600; line-height: 1.35; }
+.article-content, .rich-text-editor {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.article-content p, .rich-text-editor p {
+  margin: 0;
+  white-space: pre-wrap;
+}

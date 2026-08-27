@@ -52,7 +52,15 @@ function getResponseBlog(response: BackendItemResponse) {
   if (!payload) throw new Error("The review was saved, but the backend did not return the updated blog.");
   return normalizeBlog(payload);
 }
-function toBackendPayload(input: CreateBlogInput | UpdateBlogInput) { const payload = { ...input }; delete payload.categoryId; delete payload.tags; return payload; }
+function toBackendPayload(input: CreateBlogInput | UpdateBlogInput) {
+  const payload = { ...input };
+  delete payload.categoryId;
+  delete payload.tags;
+  // An empty slug means "auto-generate one" — sending "" trips the
+  // backend's slug-format validation instead of triggering that default.
+  if (!payload.slug?.trim()) delete payload.slug;
+  return payload;
+}
 function useInvalidateBlogLists() { const queryClient = useQueryClient(); return () => { queryClient.invalidateQueries({ queryKey: ["blogs"] }); queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] }); queryClient.invalidateQueries({ queryKey: ["audit-logs"] }); }; }
 function replaceBlogInLists(queryClient: ReturnType<typeof useQueryClient>, blog: Blog) {
   queryClient.getQueriesData<Blog[]>({ queryKey: ["blogs"] }).forEach(([key, current]) => {
@@ -124,7 +132,19 @@ export function useUpdateBlog(id: string) {
 
 export function useDeleteBlog() {
   const queryClient = useQueryClient(); const invalidateLists = useInvalidateBlogLists();
-  return useMutation({ mutationFn: (id: string) => api.delete<{ status: number; message: string; data: { id: string; deleted: boolean } }>(`/api/v1/blogs/${id}`), onSuccess: (_result, id) => { queryClient.removeQueries({ queryKey: queryKeys.blog(id) }); queryClient.setQueriesData<Blog[]>({ queryKey: ["blogs"] }, (current) => current?.filter((item) => item.id !== id)); invalidateLists(); } });
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ status: number; message: string; data: { id: string; deleted: boolean } }>(`/api/v1/blogs/${id}`),
+    onSuccess: (_result, id) => {
+      queryClient.removeQueries({ queryKey: queryKeys.blog(id) });
+      // queryKey: ["blogs"] partial-matches both the flat useBlogs() cache
+      // (an array) and the usePaginatedBlogs() cache ({ blogs, pagination }
+      // — not an array). Only the former should be filtered here.
+      queryClient.setQueriesData<Blog[]>({ queryKey: ["blogs"] }, (current) =>
+        Array.isArray(current) ? current.filter((item) => item.id !== id) : current
+      );
+      invalidateLists();
+    },
+  });
 }
 
 function useBlogTransition(id: string, action: "submit-review" | "publish" | "unpublish") {
