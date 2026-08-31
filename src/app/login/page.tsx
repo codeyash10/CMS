@@ -23,7 +23,10 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      const message = err instanceof ApiError || err instanceof Error ? err.message : "Something went wrong. Try again.";
+      const message =
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Something went wrong. Try again.";
       setError(message);
       showToast(message, "error");
     } finally {
@@ -31,16 +34,79 @@ export default function LoginPage() {
     }
   }
 
-  return <main className="min-h-screen flex items-center justify-center bg-canvas px-6 py-16"><div className="w-full max-w-sm">
-    <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink/40">Crediple / Blog CMS</p>
-    <h1 className="mt-4 font-heading text-2xl font-semibold text-ink">Sign in</h1>
-    <p className="mt-1 mb-8 text-sm text-ink/60">Access your company&apos;s blog workspace.</p>
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div><label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink/80">Email</label><Input id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" /></div>
-      <div><label htmlFor="password" className="mb-1.5 block text-sm font-medium text-ink/80">Password</label><Input id="password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-      {error && <p className="rounded-lg border border-status-rejected/20 bg-status-rejected/10 px-3 py-2 text-sm text-status-rejected">{error}</p>}
-      <Button type="submit" disabled={submitting} className="w-full">{submitting ? "Signing in…" : "Sign in"}</Button>
-    </form>
-    <div className="mt-6 space-y-3 text-sm text-ink/60"><p>Don&apos;t have an account? <Link href="/register" className="font-medium text-accent hover:text-accent-dark">Sign up</Link></p><Link href="/forgot-password" className="inline-block font-medium text-accent hover:text-accent-dark">Forgot password?</Link></div>
-  </div></main>;
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-canvas px-6 py-16">
+      <div className="w-full max-w-sm">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink/40">
+          Crediple / Blog CMS
+        </p>
+        <h1 className="mt-4 font-heading text-2xl font-semibold text-ink">
+          Sign in
+        </h1>
+        <p className="mt-1 mb-8 text-sm text-ink/60">
+          Access your company&apos;s blog workspace.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-1.5 block text-sm font-medium text-ink/80"
+            >
+              Email
+            </label>
+            <Input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1.5 block text-sm font-medium text-ink/80"
+            >
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error && (
+            <p className="rounded-lg border border-status-rejected/20 bg-status-rejected/10 px-3 py-2 text-sm text-status-rejected">
+              {error}
+            </p>
+          )}
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+        <div className="mt-6 space-y-3 text-sm text-ink/60">
+          <p>
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-accent hover:text-accent-dark"
+            >
+              Sign up
+            </Link>
+          </p>
+          <Link
+            href="/forgot-password"
+            className="inline-block font-medium text-accent hover:text-accent-dark"
+          >
+            Forgot password?
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
 }

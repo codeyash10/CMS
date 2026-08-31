@@ -18,23 +18,38 @@ export default function NewBlogPage() {
   async function handleSave(values: BlogFormValues) {
     if (!activeCompanyId) return;
     try {
-      const blog = await createBlog.mutateAsync({ companyId: activeCompanyId, ...values });
+      const blog = await createBlog.mutateAsync({
+        companyId: activeCompanyId,
+        ...values,
+      });
       showToast("Draft saved.");
       router.push(`/blogs/${blog.id}`);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : "Couldn't save the post.", "error");
+      showToast(
+        error instanceof Error ? error.message : "Couldn't save the post.",
+        "error",
+      );
     }
   }
 
   const error =
-    createBlog.error instanceof ApiError ? createBlog.error.message : createBlog.error ? "Couldn't save the post." : null;
+    createBlog.error instanceof ApiError
+      ? createBlog.error.message
+      : createBlog.error
+        ? "Couldn't save the post."
+        : null;
 
   return (
     <AuthenticatedShell>
       <div className="w-full">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-semibold text-ink">New post</h1>
-          <Button type="submit" form="new-blog-form" variant="primary" disabled={createBlog.isPending}>
+          <Button
+            type="submit"
+            form="new-blog-form"
+            variant="primary"
+            disabled={createBlog.isPending}
+          >
             {createBlog.isPending ? "Saving..." : "Save draft"}
           </Button>
         </div>
@@ -43,7 +58,12 @@ export default function NewBlogPage() {
             {error}
           </p>
         )}
-        <BlogForm formId="new-blog-form" hideSubmit onSave={handleSave} saving={createBlog.isPending} />
+        <BlogForm
+          formId="new-blog-form"
+          hideSubmit
+          onSave={handleSave}
+          saving={createBlog.isPending}
+        />
       </div>
     </AuthenticatedShell>
   );

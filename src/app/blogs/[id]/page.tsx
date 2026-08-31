@@ -46,44 +46,107 @@ export default function BlogDetailPage() {
     unpublishBlog.error;
 
   async function save(values: BlogFormValues) {
-    try { await updateBlog.mutateAsync(values); showToast("Draft saved."); } catch (error) { showToast(error instanceof Error ? error.message : "Could not save the post.", "error"); }
+    try {
+      await updateBlog.mutateAsync(values);
+      showToast("Draft saved.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not save the post.",
+        "error",
+      );
+    }
   }
 
   async function remove() {
-    try { await deleteBlog.mutateAsync(id); showToast("Post deleted."); router.push("/blogs"); } catch (error) { showToast(error instanceof Error ? error.message : "Could not delete the post.", "error"); }
+    try {
+      await deleteBlog.mutateAsync(id);
+      showToast("Post deleted.");
+      router.push("/blogs");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not delete the post.",
+        "error",
+      );
+    }
   }
 
   async function sendForReview() {
-    try { await submitForReview.mutateAsync(); showToast("Post submitted for review."); } catch (error) { showToast(error instanceof Error ? error.message : "Could not submit the post.", "error"); }
+    try {
+      await submitForReview.mutateAsync();
+      showToast("Post submitted for review.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not submit the post.",
+        "error",
+      );
+    }
   }
 
   async function approveBlog() {
     const comment = reviewComment.trim();
     try {
-      await reviewBlog.mutateAsync({ action: "approve", ...(comment ? { comment } : {}) });
+      await reviewBlog.mutateAsync({
+        action: "approve",
+        ...(comment ? { comment } : {}),
+      });
       setReviewComment("");
       showToast("Post approved.");
-    } catch (error) { showToast(error instanceof Error ? error.message : "Could not approve the post.", "error"); }
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not approve the post.",
+        "error",
+      );
+    }
   }
 
   async function rejectBlog() {
     const comment = reviewComment.trim();
     if (!comment) return;
-    try { await reviewBlog.mutateAsync({ action: "reject", comment }); setReviewComment(""); showToast("Post sent back with feedback."); } catch (error) { showToast(error instanceof Error ? error.message : "Could not reject the post.", "error"); }
+    try {
+      await reviewBlog.mutateAsync({ action: "reject", comment });
+      setReviewComment("");
+      showToast("Post sent back with feedback.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not reject the post.",
+        "error",
+      );
+    }
   }
 
   async function publish() {
-    try { await publishBlog.mutateAsync(); showToast("Post published."); } catch (error) { showToast(error instanceof Error ? error.message : "Could not publish the post.", "error"); }
+    try {
+      await publishBlog.mutateAsync();
+      showToast("Post published.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not publish the post.",
+        "error",
+      );
+    }
   }
 
   async function unpublish() {
-    try { await unpublishBlog.mutateAsync(); showToast("Post unpublished."); } catch (error) { showToast(error instanceof Error ? error.message : "Could not unpublish the post.", "error"); }
+    try {
+      await unpublishBlog.mutateAsync();
+      showToast("Post unpublished.");
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Could not unpublish the post.",
+        "error",
+      );
+    }
   }
 
   if (blogQuery.isLoading) {
     return (
       <AuthenticatedShell>
-        <div className="space-y-4"><div className="h-8 w-48 animate-pulse rounded bg-ink/5" /><div className="h-80 animate-pulse rounded-xl border border-line bg-panel" /></div>
+        <div className="space-y-4">
+          <div className="h-8 w-48 animate-pulse rounded bg-ink/5" />
+          <div className="h-80 animate-pulse rounded-xl border border-line bg-panel" />
+        </div>
       </AuthenticatedShell>
     );
   }
@@ -93,36 +156,51 @@ export default function BlogDetailPage() {
     return (
       <AuthenticatedShell>
         <p className="text-sm text-status-rejected">
-          {error instanceof ApiError || error instanceof Error ? error.message : "Blog not found."}
+          {error instanceof ApiError || error instanceof Error
+            ? error.message
+            : "Blog not found."}
         </p>
       </AuthenticatedShell>
     );
   }
 
   const canSubmitForReview =
-    hasPermission("blog.submit_review") && ["draft", "rejected"].includes(blog.status);
-  const canReview = hasPermission("blog.review") && blog.status === "submitted_for_review";
-  const canPublish = hasPermission("blog.publish") && blog.status === "approved";
-  const canUnpublish = hasPermission("blog.publish") && blog.status === "published";
-  const reviewFeedback = Array.isArray(blog.reviews) ? blog.reviews.filter((review) => review.comment?.trim()) : [];
+    hasPermission("blog.submit_review") &&
+    ["draft", "rejected"].includes(blog.status);
+  const canReview =
+    hasPermission("blog.review") && blog.status === "submitted_for_review";
+  const canPublish =
+    hasPermission("blog.publish") && blog.status === "approved";
+  const canUnpublish =
+    hasPermission("blog.publish") && blog.status === "published";
+  const reviewFeedback = Array.isArray(blog.reviews)
+    ? blog.reviews.filter((review) => review.comment?.trim())
+    : [];
 
   return (
     <AuthenticatedShell>
       <div className="w-full">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <button onClick={() => router.push("/blogs")} className="mb-3 text-sm text-ink/50 hover:text-ink">
+            <button
+              onClick={() => router.push("/blogs")}
+              className="mb-3 text-sm text-ink/50 hover:text-ink"
+            >
               Back to blogs
             </button>
             <h1 className="text-xl font-semibold text-ink">Edit post</h1>
-            <p className="mt-1 text-sm text-ink/50">Last updated {new Date(blog.updatedAt).toLocaleString()}</p>
+            <p className="mt-1 text-sm text-ink/50">
+              Last updated {new Date(blog.updatedAt).toLocaleString()}
+            </p>
           </div>
           <StatusBadge status={blog.status} />
         </div>
 
         {error && (
           <p className="mb-4 rounded-lg border border-status-rejected/20 bg-status-rejected/10 px-3 py-2 text-sm text-status-rejected">
-            {error instanceof ApiError || error instanceof Error ? error.message : "Could not save the post."}
+            {error instanceof ApiError || error instanceof Error
+              ? error.message
+              : "Could not save the post."}
           </p>
         )}
 
@@ -131,16 +209,26 @@ export default function BlogDetailPage() {
         <section className="mt-8 rounded-xl border border-line bg-panel p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-ink">Workflow actions</h2>
-              <p className="mt-1 text-sm text-ink/50">Move this post through review and publish states.</p>
+              <h2 className="text-base font-semibold text-ink">
+                Workflow actions
+              </h2>
+              <p className="mt-1 text-sm text-ink/50">
+                Move this post through review and publish states.
+              </p>
             </div>
             <StatusBadge status={blog.status as BlogStatus} />
           </div>
 
           {canSubmitForReview && (
             <div className="mt-5">
-              <Button variant="primary" onClick={sendForReview} disabled={submitForReview.isPending}>
-                {submitForReview.isPending ? "Submitting..." : "Send for review"}
+              <Button
+                variant="primary"
+                onClick={sendForReview}
+                disabled={submitForReview.isPending}
+              >
+                {submitForReview.isPending
+                  ? "Submitting..."
+                  : "Send for review"}
               </Button>
             </div>
           )}
@@ -154,7 +242,11 @@ export default function BlogDetailPage() {
                 placeholder="Add feedback for the author (included with approval or rejection)"
               />
               <div className="flex flex-wrap gap-3">
-                <Button variant="primary" onClick={approveBlog} disabled={reviewBlog.isPending}>
+                <Button
+                  variant="primary"
+                  onClick={approveBlog}
+                  disabled={reviewBlog.isPending}
+                >
                   {reviewBlog.isPending ? "Updating..." : "Approved"}
                 </Button>
                 <Button
@@ -170,7 +262,11 @@ export default function BlogDetailPage() {
 
           {canPublish && (
             <div className="mt-5">
-              <Button variant="dark" onClick={publish} disabled={publishBlog.isPending}>
+              <Button
+                variant="dark"
+                onClick={publish}
+                disabled={publishBlog.isPending}
+              >
                 {publishBlog.isPending ? "Publishing..." : "Publish"}
               </Button>
             </div>
@@ -178,7 +274,11 @@ export default function BlogDetailPage() {
 
           {canUnpublish && (
             <div className="mt-5">
-              <Button variant="secondary" onClick={unpublish} disabled={unpublishBlog.isPending}>
+              <Button
+                variant="secondary"
+                onClick={unpublish}
+                disabled={unpublishBlog.isPending}
+              >
                 {unpublishBlog.isPending ? "Unpublishing..." : "Unpublish"}
               </Button>
             </div>
@@ -186,15 +286,26 @@ export default function BlogDetailPage() {
 
           {reviewFeedback.length > 0 && (
             <div className="mt-5 border-t border-line pt-5">
-              <h3 className="text-sm font-semibold text-ink">Review feedback</h3>
+              <h3 className="text-sm font-semibold text-ink">
+                Review feedback
+              </h3>
               <div className="mt-3 space-y-3">
                 {reviewFeedback.map((review) => (
-                  <div key={review.id} className="rounded-lg border border-line bg-canvas px-3 py-3">
+                  <div
+                    key={review.id}
+                    className="rounded-lg border border-line bg-canvas px-3 py-3"
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-medium capitalize text-ink">{review.action}</span>
-                      <span className="text-xs text-ink/45">{new Date(review.createdAt).toLocaleString()}</span>
+                      <span className="text-xs font-medium capitalize text-ink">
+                        {review.action}
+                      </span>
+                      <span className="text-xs text-ink/45">
+                        {new Date(review.createdAt).toLocaleString()}
+                      </span>
                     </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink/65">{review.comment}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink/65">
+                      {review.comment}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -203,7 +314,11 @@ export default function BlogDetailPage() {
         </section>
 
         <div className="mt-8 border-t border-line pt-5">
-          <Button variant="danger" onClick={() => setIsDeleteDialogOpen(true)} disabled={deleteBlog.isPending}>
+          <Button
+            variant="danger"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={deleteBlog.isPending}
+          >
             Delete post
           </Button>
         </div>
@@ -244,18 +359,15 @@ function DeleteConfirmDialog({
           Delete this blog?
         </h2>
         <p className="mt-2 text-sm leading-6 text-ink/60">
-          This action will permanently delete this blog. You won’t be able to recover it afterward.
+          This action will permanently delete this blog. You won’t be able to
+          recover it afterward.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <Button variant="secondary" onClick={onCancel} disabled={loading}>
             No
           </Button>
-          <Button
-            variant="danger"
-            onClick={onConfirm}
-            disabled={loading}
-          >
+          <Button variant="danger" onClick={onConfirm} disabled={loading}>
             {loading ? "Deleting..." : "Yes, delete it"}
           </Button>
         </div>

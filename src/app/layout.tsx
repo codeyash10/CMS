@@ -30,7 +30,11 @@ export const metadata: Metadata = {
   description: "Blog workflow admin panel — draft, review, approve, publish.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
@@ -43,7 +47,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased">
         <ThemeProvider>
           <QueryProvider>
-            <ToastProvider><AuthProvider>{children}</AuthProvider></ToastProvider>
+            <ToastProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </ToastProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

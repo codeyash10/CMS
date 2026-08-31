@@ -15,7 +15,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       className={cn(
         "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
         "text-ink/60 hover:text-ink hover:bg-ink/5",
-        className
+        className,
       )}
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}
