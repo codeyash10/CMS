@@ -15,7 +15,7 @@ export function StatusBadge({ status }: { status: BlogStatus }) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium font-mono",
-        "bg-ink/5 text-ink/70 dark:bg-white/5"
+        "bg-ink/5 text-ink/70 dark:bg-white/5",
       )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", config.dot)} />

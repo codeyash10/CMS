@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: firstZodError(parsed.error) }, { status: 400 });
+    return NextResponse.json(
+      { error: firstZodError(parsed.error) },
+      { status: 400 },
+    );
   }
   const { email, password } = parsed.data;
 
@@ -16,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!user || user.password !== password || !user.isActive) {
     return NextResponse.json(
       { error: "Invalid email or password." },
-      { status: 401 }
+      { status: 401 },
     );
   }
 

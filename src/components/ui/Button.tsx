@@ -15,9 +15,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary: "bg-accent text-white hover:bg-accent-dark",
-        secondary: "bg-panel border border-line text-ink/70 hover:border-accent hover:text-ink",
+        secondary:
+          "bg-panel border border-line text-ink/70 hover:border-accent hover:text-ink",
         ghost: "text-ink/70 hover:bg-ink/5 hover:text-ink",
-        danger: "bg-panel border border-status-rejected text-status-rejected hover:bg-status-rejected/10",
+        danger:
+          "bg-panel border border-status-rejected text-status-rejected hover:bg-status-rejected/10",
         dark: "bg-ink text-canvas hover:opacity-90",
       },
       size: {
@@ -30,16 +32,24 @@ const buttonVariants = cva(
       variant: "primary",
       size: "md",
     },
-  }
+  },
 );
 
-type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> &
+type ButtonProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> &
   VariantProps<typeof buttonVariants> & {
     children?: React.ReactNode;
   };
 
 export function Button({ className, variant, size, ...props }: ButtonProps) {
-  return <button className={cn(buttonVariants({ variant, size }), className)} {...props} />;
+  return (
+    <button
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
 }
 
 export { buttonVariants };

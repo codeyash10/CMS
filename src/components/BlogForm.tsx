@@ -38,7 +38,10 @@ export function BlogForm({
 }) {
   const [values, setValues] = useState<BlogFormValues>(toValues(blog));
 
-  function update<K extends keyof BlogFormValues>(key: K, val: BlogFormValues[K]) {
+  function update<K extends keyof BlogFormValues>(
+    key: K,
+    val: BlogFormValues[K],
+  ) {
     setValues((prev) => ({ ...prev, [key]: val }));
   }
 
@@ -118,10 +121,18 @@ export function BlogForm({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label className="block text-sm font-medium text-ink/80 mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-ink/80 mb-1.5">
+        {label}
+      </label>
       {children}
     </div>
   );

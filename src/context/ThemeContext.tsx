@@ -1,6 +1,9 @@
 "use client";
 
-import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
+import {
+  ThemeProvider as NextThemesProvider,
+  useTheme as useNextTheme,
+} from "next-themes";
 import { useEffect, useState, type ReactNode } from "react";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -28,7 +31,12 @@ export function ThemeScript() {
   } catch(e){}
 })();
 `;
-  return <script dangerouslySetInnerHTML={{ __html: code }} suppressHydrationWarning />;
+  return (
+    <script
+      dangerouslySetInnerHTML={{ __html: code }}
+      suppressHydrationWarning
+    />
+  );
 }
 
 export function useTheme() {

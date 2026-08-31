@@ -4,7 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { Blog, BlogStatus } from "@/lib/mock-db";
-import { CreateBlogInput, ReviewActionInput, UpdateBlogInput } from "@/lib/schemas/blog";
+import {
+  CreateBlogInput,
+  ReviewActionInput,
+  UpdateBlogInput,
+} from "@/lib/schemas/blog";
 
 export function useBlogs(companyId: string | null, status?: BlogStatus | "") {
   return useQuery({
@@ -12,7 +16,9 @@ export function useBlogs(companyId: string | null, status?: BlogStatus | "") {
     queryFn: async () => {
       const qs = new URLSearchParams({ companyId: companyId! });
       if (status) qs.set("status", status);
-      const data = await api.get<{ blogs: Blog[] }>(`/api/blogs?${qs.toString()}`);
+      const data = await api.get<{ blogs: Blog[] }>(
+        `/api/blogs?${qs.toString()}`,
+      );
       return data.blogs;
     },
     enabled: !!companyId,
@@ -22,7 +28,8 @@ export function useBlogs(companyId: string | null, status?: BlogStatus | "") {
 export function useBlog(id: string) {
   return useQuery({
     queryKey: queryKeys.blog(id),
-    queryFn: async () => (await api.get<{ blog: Blog }>(`/api/blogs/${id}`)).blog,
+    queryFn: async () =>
+      (await api.get<{ blog: Blog }>(`/api/blogs/${id}`)).blog,
     enabled: !!id,
   });
 }
@@ -62,11 +69,17 @@ export function useUpdateBlog(id: string) {
   });
 }
 
-function useBlogTransition(id: string, action: "submit-review" | "publish" | "unpublish") {
+function useBlogTransition(
+  id: string,
+  action: "submit-review" | "publish" | "unpublish",
+) {
   const queryClient = useQueryClient();
   const invalidateLists = useInvalidateBlogLists();
   return useMutation({
-    mutationFn: () => api.post<{ blog: Blog }>(`/api/blogs/${id}/${action}`).then((d) => d.blog),
+    mutationFn: () =>
+      api
+        .post<{ blog: Blog }>(`/api/blogs/${id}/${action}`)
+        .then((d) => d.blog),
     onSuccess: (blog) => {
       queryClient.setQueryData(queryKeys.blog(id), blog);
       invalidateLists();
@@ -91,7 +104,9 @@ export function useReviewBlog(id: string) {
   const invalidateLists = useInvalidateBlogLists();
   return useMutation({
     mutationFn: (input: ReviewActionInput) =>
-      api.post<{ blog: Blog }>(`/api/blogs/${id}/review`, input).then((d) => d.blog),
+      api
+        .post<{ blog: Blog }>(`/api/blogs/${id}/review`, input)
+        .then((d) => d.blog),
     onSuccess: (blog) => {
       queryClient.setQueryData(queryKeys.blog(id), blog);
       invalidateLists();

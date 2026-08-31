@@ -9,11 +9,12 @@ import { blogs, companies } from "@/lib/mock-db";
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ companySlug: string }> }
+  { params }: { params: Promise<{ companySlug: string }> },
 ) {
   const { companySlug } = await params;
   const company = companies.find((c) => c.slug === companySlug);
-  if (!company) return NextResponse.json({ error: "Unknown company." }, { status: 404 });
+  if (!company)
+    return NextResponse.json({ error: "Unknown company." }, { status: 404 });
 
   const published = blogs
     .filter((b) => b.companyId === company.id && b.status === "published")

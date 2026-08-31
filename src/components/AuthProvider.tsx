@@ -1,21 +1,17 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { authApi, type AuthUser } from "@/lib/auth-api";
 import { queryKeys } from "@/lib/queryKeys";
-import { loginSchema } from "@/lib/schemas/auth";
-
-export interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
-  role: { id: string; key: string; label: string } | null;
-  permissions: string[];
-  companyIds: string[];
-  companies: { id: string; name: string; slug: string }[];
-}
+import { loginSchema, registerSchema } from "@/lib/schemas/auth";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -24,6 +20,13 @@ interface AuthContextValue {
   setActiveCompanyId: (id: string) => void;
   hasPermission: (permission: string) => boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (input: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role?: "admin" | "editor" | "reviewer" | "super_admin";
+  }) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -35,23 +38,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const meQuery = useQuery({
+  const currentUserQuery = useQuery({
     queryKey: queryKeys.me,
-    queryFn: () => api.get<{ user: AuthUser }>("/api/auth/me").then((d) => d.user),
+    queryFn: () => authApi.getCurrentUser(),
     retry: false,
   });
 
-  const user = meQuery.data ?? null;
-  const loading = meQuery.isLoading;
-
-  useEffect(() => {
-    if (user) setActiveCompanyId((prev) => prev ?? user.companies[0]?.id ?? null);
-  }, [user]);
+  const user = currentUserQuery.data ?? null;
+  const loading = currentUserQuery.isLoading;
+  const resolvedActiveCompanyId =
+    activeCompanyId ?? user?.companies[0]?.id ?? null;
 
   const loginMutation = useMutation({
     mutationFn: (input: { email: string; password: string }) => {
       const parsed = loginSchema.parse(input);
-      return api.post<{ user: AuthUser }>("/api/auth/login", parsed).then((d) => d.user);
+      return authApi.login(parsed);
     },
     onSuccess: (loggedInUser) => {
       queryClient.setQueryData(queryKeys.me, loggedInUser);
@@ -60,8 +61,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
+  const registerMutation = useMutation({
+    mutationFn: (input: {
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      role?: "admin" | "editor" | "reviewer" | "super_admin";
+    }) => {
+      const parsed = registerSchema.parse(input);
+      return authApi.register(parsed);
+    },
+    onSuccess: (registeredUser) => {
+      queryClient.setQueryData(queryKeys.me, registeredUser);
+      setActiveCompanyId(registeredUser.companies[0]?.id ?? null);
+      router.push("/dashboard");
+    },
+  });
+
   const logoutMutation = useMutation({
-    mutationFn: () => api.post("/api/auth/logout"),
+    mutationFn: () => authApi.logout(),
     onSuccess: () => {
       queryClient.setQueryData(queryKeys.me, null);
       router.push("/login");
@@ -69,24 +88,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(
-    (email: string, password: string) => loginMutation.mutateAsync({ email, password }).then(() => {}),
-    [loginMutation]
+    (email: string, password: string) =>
+      loginMutation.mutateAsync({ email, password }).then(() => {}),
+    [loginMutation],
   );
 
-  const logout = useCallback(() => logoutMutation.mutateAsync().then(() => {}), [logoutMutation]);
+  const register = useCallback(
+    (input: {
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      role?: "admin" | "editor" | "reviewer" | "super_admin";
+    }) => registerMutation.mutateAsync(input).then(() => {}),
+    [registerMutation],
+  );
+
+  const logout = useCallback(
+    () => logoutMutation.mutateAsync().then(() => {}),
+    [logoutMutation],
+  );
 
   const refresh = useCallback(async () => {
-    await meQuery.refetch();
-  }, [meQuery]);
+    await currentUserQuery.refetch();
+  }, [currentUserQuery]);
 
   const hasPermission = useCallback(
     (permission: string) => user?.permissions.includes(permission) ?? false,
-    [user]
+    [user],
   );
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, activeCompanyId, setActiveCompanyId, hasPermission, login, logout, refresh }),
-    [user, loading, activeCompanyId, hasPermission, login, logout, refresh]
+    () => ({
+      user,
+      loading,
+      activeCompanyId: resolvedActiveCompanyId,
+      setActiveCompanyId,
+      hasPermission,
+      login,
+      register,
+      logout,
+      refresh,
+    }),
+    [
+      user,
+      loading,
+      resolvedActiveCompanyId,
+      hasPermission,
+      login,
+      register,
+      logout,
+      refresh,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

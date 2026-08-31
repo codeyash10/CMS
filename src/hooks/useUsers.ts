@@ -15,6 +15,7 @@ export interface UserRow {
 export function useUsers() {
   return useQuery({
     queryKey: queryKeys.users,
-    queryFn: async () => (await api.get<{ users: UserRow[] }>("/api/users")).users,
+    queryFn: async () =>
+      (await api.get<{ users: UserRow[] }>("/api/users")).users,
   });
 }

@@ -15,7 +15,10 @@ export default function NewBlogPage() {
   async function handleSave(values: BlogFormValues) {
     if (!activeCompanyId) return;
     try {
-      const blog = await createBlog.mutateAsync({ companyId: activeCompanyId, ...values });
+      const blog = await createBlog.mutateAsync({
+        companyId: activeCompanyId,
+        ...values,
+      });
       router.push(`/blogs/${blog.id}`);
     } catch {
       // surfaced via createBlog.error below
@@ -23,7 +26,11 @@ export default function NewBlogPage() {
   }
 
   const error =
-    createBlog.error instanceof ApiError ? createBlog.error.message : createBlog.error ? "Couldn't save the post." : null;
+    createBlog.error instanceof ApiError
+      ? createBlog.error.message
+      : createBlog.error
+        ? "Couldn't save the post."
+        : null;
 
   return (
     <AuthenticatedShell>
