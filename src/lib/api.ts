@@ -19,14 +19,22 @@ export const AUTH_STORAGE_KEYS = {
 } as const;
 
 /**
- * Leave this blank to use the in-app mock routes during development.
+ * Leave this unset to use the in-app mock routes during development.
  * Set NEXT_PUBLIC_API_BASE_URL when the backend is available; all API calls
  * will then use that host without changing individual screens or hooks.
  */
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(
-  /\/$/,
-  "",
-);
+function resolveApiBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (raw === undefined || raw === "") return "";
+  if (!/^https?:\/\//.test(raw)) {
+    throw new Error(
+      `Invalid NEXT_PUBLIC_API_BASE_URL "${raw}": must be a full http(s) URL.`,
+    );
+  }
+  return raw.replace(/\/$/, "");
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export function getStoredAccessToken() {
   if (typeof window === "undefined") return null;
@@ -55,15 +63,51 @@ export function clearStoredAuthTokens() {
   localStorage.removeItem(AUTH_STORAGE_KEYS.refreshToken);
 }
 
+const REFRESH_PATH = "/api/v1/auth/refresh";
+
 function resolveApiUrl(path: string) {
   return API_BASE_URL && path.startsWith("/api/v1")
     ? `${API_BASE_URL}${path}`
     : path;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) return null;
+
+  const isBackendRequest = Boolean(API_BASE_URL);
+  const res = await fetch(resolveApiUrl(REFRESH_PATH), {
+    method: "POST",
+    credentials: isBackendRequest ? "omit" : "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(isBackendRequest ? { "ngrok-skip-browser-warning": "true" } : {}),
+      Authorization: `Bearer ${refreshToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    clearStoredAuthTokens();
+    return null;
+  }
+
+  const body = await res.json().catch(() => null);
+  if (!body?.data?.accessToken) {
+    clearStoredAuthTokens();
+    return null;
+  }
+
+  setStoredAuthTokens(body.data);
+  return body.data.accessToken as string;
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  isRetry = false,
+): Promise<T> {
   const accessToken = getStoredAccessToken();
-  const isBackendRequest = API_BASE_URL && path.startsWith("/api/v1");
+  const isBackendRequest = Boolean(API_BASE_URL) && path.startsWith("/api/v1");
   const res = await fetch(resolveApiUrl(path), {
     ...options,
     credentials: isBackendRequest ? "omit" : "include",
@@ -74,6 +118,18 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...(options.headers ?? {}),
     },
   });
+
+  if (
+    res.status === 401 &&
+    !isRetry &&
+    path !== REFRESH_PATH &&
+    getStoredRefreshToken()
+  ) {
+    const refreshedToken = await refreshAccessToken();
+    if (refreshedToken) {
+      return request<T>(path, options, true);
+    }
+  }
 
   const isJson = res.headers.get("content-type")?.includes("application/json");
   const body = isJson ? await res.json().catch(() => null) : null;

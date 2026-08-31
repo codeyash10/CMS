@@ -1,9 +1,4 @@
-import {
-  api,
-  clearStoredAuthTokens,
-  getStoredRefreshToken,
-  setStoredAuthTokens,
-} from "@/lib/api";
+import { api, clearStoredAuthTokens, setStoredAuthTokens } from "@/lib/api";
 
 type BackendRole =
   "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "REVIEWER" | "USER" | string;
@@ -20,7 +15,7 @@ type AuthResponse = {
   };
 };
 
-type MeResponse = {
+type CurrentUserResponse = {
   status: number;
   message: string;
   data: {
@@ -113,7 +108,7 @@ function normalizeRole(role: BackendRole) {
   };
 }
 
-function toAuthUser(data: MeResponse["data"]): AuthUser {
+function toAuthUser(data: CurrentUserResponse["data"]): AuthUser {
   const role = normalizeRole(data.role);
   const name =
     [data.firstName, data.lastName].filter(Boolean).join(" ").trim() ||
@@ -136,8 +131,7 @@ async function authenticate(
 ) {
   const response = await api.post<AuthResponse>(path, input);
   setStoredAuthTokens(response.data);
-  const me = await authApi.me();
-  return me;
+  return authApi.getCurrentUser();
 }
 
 export const authApi = {
@@ -147,46 +141,9 @@ export const authApi = {
   register(input: RegisterInput) {
     return authenticate("/api/v1/auth/register", input);
   },
-  async me() {
-    try {
-      return await this.fetchMe();
-    } catch (error) {
-      if (
-        !(
-          error instanceof Error &&
-          "status" in error &&
-          error.status === 401
-        ) ||
-        !getStoredRefreshToken()
-      ) {
-        throw error;
-      }
-      await this.refresh();
-      return this.fetchMe();
-    }
-  },
-  async fetchMe() {
-    const response = await api.get<MeResponse>("/api/v1/users/me");
+  async getCurrentUser() {
+    const response = await api.get<CurrentUserResponse>("/api/v1/users/me");
     return toAuthUser(response.data);
-  },
-  async refresh() {
-    const refreshToken = getStoredRefreshToken();
-    if (!refreshToken)
-      throw new Error("Your session has expired. Please sign in again.");
-
-    try {
-      const response = await api.post<AuthResponse>(
-        "/api/v1/auth/refresh",
-        undefined,
-        {
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      );
-      setStoredAuthTokens(response.data);
-    } catch (error) {
-      clearStoredAuthTokens();
-      throw error;
-    }
   },
   forgotPassword(email: string) {
     return api.post<MessageResponse>("/api/v1/auth/forgot-password", { email });
