@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi, type AuthUser } from "@/lib/auth-api";
@@ -40,7 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const user = meQuery.data ?? null;
   const loading = meQuery.isLoading;
-  const resolvedActiveCompanyId = activeCompanyId ?? user?.companies[0]?.id ?? null;
+  const resolvedActiveCompanyId =
+    activeCompanyId ?? user?.companies[0]?.id ?? null;
 
   const loginMutation = useMutation({
     mutationFn: (input: { email: string; password: string }) => {
@@ -81,8 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(
-    (email: string, password: string) => loginMutation.mutateAsync({ email, password }).then(() => {}),
-    [loginMutation]
+    (email: string, password: string) =>
+      loginMutation.mutateAsync({ email, password }).then(() => {}),
+    [loginMutation],
   );
 
   const register = useCallback(
@@ -92,12 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName: string;
       lastName: string;
       role?: "admin" | "editor" | "reviewer" | "super_admin";
-    }) =>
-      registerMutation.mutateAsync(input).then(() => {}),
-    [registerMutation]
+    }) => registerMutation.mutateAsync(input).then(() => {}),
+    [registerMutation],
   );
 
-  const logout = useCallback(() => logoutMutation.mutateAsync().then(() => {}), [logoutMutation]);
+  const logout = useCallback(
+    () => logoutMutation.mutateAsync().then(() => {}),
+    [logoutMutation],
+  );
 
   const refresh = useCallback(async () => {
     await meQuery.refetch();
@@ -105,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = useCallback(
     (permission: string) => user?.permissions.includes(permission) ?? false,
-    [user]
+    [user],
   );
 
   const value = useMemo<AuthContextValue>(
@@ -120,7 +130,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refresh,
     }),
-    [user, loading, resolvedActiveCompanyId, hasPermission, login, register, logout, refresh]
+    [
+      user,
+      loading,
+      resolvedActiveCompanyId,
+      hasPermission,
+      login,
+      register,
+      logout,
+      refresh,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

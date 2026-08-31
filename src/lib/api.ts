@@ -23,7 +23,10 @@ export const AUTH_STORAGE_KEYS = {
  * Set NEXT_PUBLIC_API_BASE_URL when the backend is available; all API calls
  * will then use that host without changing individual screens or hooks.
  */
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(
+  /\/$/,
+  "",
+);
 
 export function getStoredAccessToken() {
   if (typeof window === "undefined") return null;
@@ -35,7 +38,10 @@ export function getStoredRefreshToken() {
   return localStorage.getItem(AUTH_STORAGE_KEYS.refreshToken);
 }
 
-export function setStoredAuthTokens(tokens: { accessToken: string; refreshToken?: string }) {
+export function setStoredAuthTokens(tokens: {
+  accessToken: string;
+  refreshToken?: string;
+}) {
   if (typeof window === "undefined") return;
   localStorage.setItem(AUTH_STORAGE_KEYS.accessToken, tokens.accessToken);
   if (tokens.refreshToken) {
@@ -50,7 +56,9 @@ export function clearStoredAuthTokens() {
 }
 
 function resolveApiUrl(path: string) {
-  return API_BASE_URL && path.startsWith("/api/v1") ? `${API_BASE_URL}${path}` : path;
+  return API_BASE_URL && path.startsWith("/api/v1")
+    ? `${API_BASE_URL}${path}`
+    : path;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -72,8 +80,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     throw new ApiError(
-      body?.errors?.[0] ?? body?.message ?? body?.error ?? `Request failed with status ${res.status}`,
-      res.status
+      body?.errors?.[0] ??
+        body?.message ??
+        body?.error ??
+        `Request failed with status ${res.status}`,
+      res.status,
     );
   }
 
@@ -87,8 +98,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   get: <T>(path: string) => request<T>(path, { method: "GET" }),
   post: <T>(path: string, data?: unknown, headers?: HeadersInit) =>
-    request<T>(path, { method: "POST", body: data ? JSON.stringify(data) : undefined, headers }),
+    request<T>(path, {
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
+      headers,
+    }),
   patch: <T>(path: string, data?: unknown) =>
-    request<T>(path, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
+    request<T>(path, {
+      method: "PATCH",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };

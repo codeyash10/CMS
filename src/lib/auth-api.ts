@@ -5,7 +5,8 @@ import {
   setStoredAuthTokens,
 } from "@/lib/api";
 
-type BackendRole = "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "REVIEWER" | "USER" | string;
+type BackendRole =
+  "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "REVIEWER" | "USER" | string;
 
 type AuthResponse = {
   status: number;
@@ -59,7 +60,11 @@ type MessageResponse = {
   data: { message: string };
 };
 
-const DEFAULT_COMPANY = { id: "co_crediple", name: "Crediple", slug: "crediple" };
+const DEFAULT_COMPANY = {
+  id: "co_crediple",
+  name: "Crediple",
+  slug: "crediple",
+};
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -110,7 +115,9 @@ function normalizeRole(role: BackendRole) {
 
 function toAuthUser(data: MeResponse["data"]): AuthUser {
   const role = normalizeRole(data.role);
-  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.email;
+  const name =
+    [data.firstName, data.lastName].filter(Boolean).join(" ").trim() ||
+    data.email;
 
   return {
     id: data.id,
@@ -123,7 +130,10 @@ function toAuthUser(data: MeResponse["data"]): AuthUser {
   };
 }
 
-async function authenticate(path: "/api/v1/auth/login" | "/api/v1/auth/register", input: LoginInput | RegisterInput) {
+async function authenticate(
+  path: "/api/v1/auth/login" | "/api/v1/auth/register",
+  input: LoginInput | RegisterInput,
+) {
   const response = await api.post<AuthResponse>(path, input);
   setStoredAuthTokens(response.data);
   const me = await authApi.me();
@@ -141,7 +151,14 @@ export const authApi = {
     try {
       return await this.fetchMe();
     } catch (error) {
-      if (!(error instanceof Error && "status" in error && error.status === 401) || !getStoredRefreshToken()) {
+      if (
+        !(
+          error instanceof Error &&
+          "status" in error &&
+          error.status === 401
+        ) ||
+        !getStoredRefreshToken()
+      ) {
         throw error;
       }
       await this.refresh();
@@ -154,12 +171,17 @@ export const authApi = {
   },
   async refresh() {
     const refreshToken = getStoredRefreshToken();
-    if (!refreshToken) throw new Error("Your session has expired. Please sign in again.");
+    if (!refreshToken)
+      throw new Error("Your session has expired. Please sign in again.");
 
     try {
-      const response = await api.post<AuthResponse>("/api/v1/auth/refresh", undefined, {
-        Authorization: `Bearer ${refreshToken}`,
-      });
+      const response = await api.post<AuthResponse>(
+        "/api/v1/auth/refresh",
+        undefined,
+        {
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      );
       setStoredAuthTokens(response.data);
     } catch (error) {
       clearStoredAuthTokens();

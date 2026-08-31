@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { AppShell } from "@/components/AppShell";
 
-export function AuthenticatedShell({ children }: { children: React.ReactNode }) {
+export function AuthenticatedShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -14,7 +18,11 @@ export function AuthenticatedShell({ children }: { children: React.ReactNode }) 
   }, [loading, user, router]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-ink/50">Loading…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-ink/50">
+        Loading…
+      </div>
+    );
   }
   if (!user) return null;
 

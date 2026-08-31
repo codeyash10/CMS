@@ -4,15 +4,21 @@ import { users, roles, hasPermission } from "@/lib/mock-db";
 
 export async function GET(req: NextRequest) {
   const user = getUserFromRequest(req);
-  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (!hasPermission(user, "user.manage")) {
-    return NextResponse.json({ error: "You don't have permission to view users." }, { status: 403 });
+    return NextResponse.json(
+      { error: "You don't have permission to view users." },
+      { status: 403 },
+    );
   }
 
   // Super Admin sees everyone; Company Admin sees users sharing at least one of their companies.
   const visible = user.companyIds.includes("__all__")
     ? users
-    : users.filter((u) => u.companyIds.some((cid) => user.companyIds.includes(cid)));
+    : users.filter((u) =>
+        u.companyIds.some((cid) => user.companyIds.includes(cid)),
+      );
 
   const withRole = visible.map((u) => ({
     id: u.id,

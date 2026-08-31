@@ -17,7 +17,12 @@ import {
 } from "@/hooks/useBlogs";
 import { ApiError } from "@/lib/api";
 
-const PIPELINE = ["draft", "submitted_for_review", "approved", "published"] as const;
+const PIPELINE = [
+  "draft",
+  "submitted_for_review",
+  "approved",
+  "published",
+] as const;
 
 export default function BlogDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +46,11 @@ export default function BlogDetailPage() {
     unpublishBlog.isPending;
 
   const activeError =
-    submitForReview.error ?? reviewBlog.error ?? publishBlog.error ?? unpublishBlog.error ?? blogQuery.error;
+    submitForReview.error ??
+    reviewBlog.error ??
+    publishBlog.error ??
+    unpublishBlog.error ??
+    blogQuery.error;
   const error = activeError
     ? activeError instanceof ApiError
       ? activeError.message
@@ -59,19 +68,29 @@ export default function BlogDetailPage() {
   if (!blog) {
     return (
       <AuthenticatedShell>
-        <p className="text-sm text-status-rejected">{error ?? "Post not found."}</p>
+        <p className="text-sm text-status-rejected">
+          {error ?? "Post not found."}
+        </p>
       </AuthenticatedShell>
     );
   }
 
   const isOwner = blog.authorId === user?.id;
   const canEdit =
-    (isOwner && hasPermission("blog.edit_own") && ["draft", "rejected"].includes(blog.status)) ||
+    (isOwner &&
+      hasPermission("blog.edit_own") &&
+      ["draft", "rejected"].includes(blog.status)) ||
     hasPermission("blog.edit_any");
-  const canSubmit = isOwner && hasPermission("blog.submit_review") && ["draft", "rejected"].includes(blog.status);
-  const canReview = hasPermission("blog.review") && blog.status === "submitted_for_review";
-  const canPublish = hasPermission("blog.publish") && blog.status === "approved";
-  const canUnpublish = hasPermission("blog.publish") && blog.status === "published";
+  const canSubmit =
+    isOwner &&
+    hasPermission("blog.submit_review") &&
+    ["draft", "rejected"].includes(blog.status);
+  const canReview =
+    hasPermission("blog.review") && blog.status === "submitted_for_review";
+  const canPublish =
+    hasPermission("blog.publish") && blog.status === "approved";
+  const canUnpublish =
+    hasPermission("blog.publish") && blog.status === "published";
 
   async function handleSaveEdits(values: BlogFormValues) {
     try {
@@ -92,17 +111,24 @@ export default function BlogDetailPage() {
   }
 
   const pipelineIndex =
-    blog.status === "rejected" ? 0 : PIPELINE.indexOf(blog.status as (typeof PIPELINE)[number]);
+    blog.status === "rejected"
+      ? 0
+      : PIPELINE.indexOf(blog.status as (typeof PIPELINE)[number]);
 
   return (
     <AuthenticatedShell>
       <div className="max-w-2xl">
-        <button onClick={() => router.push("/blogs")} className="text-sm text-ink/50 hover:text-ink mb-4">
+        <button
+          onClick={() => router.push("/blogs")}
+          className="text-sm text-ink/50 hover:text-ink mb-4"
+        >
           ← Back to blogs
         </button>
 
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-semibold text-ink">{blog.title || "Untitled post"}</h1>
+          <h1 className="text-xl font-semibold text-ink">
+            {blog.title || "Untitled post"}
+          </h1>
           <StatusBadge status={blog.status} />
         </div>
 
@@ -112,7 +138,9 @@ export default function BlogDetailPage() {
             <div key={stage} className="flex items-center flex-1">
               <div
                 className={`h-1.5 flex-1 rounded-full ${
-                  i <= pipelineIndex && blog.status !== "rejected" ? "bg-accent" : "bg-line"
+                  i <= pipelineIndex && blog.status !== "rejected"
+                    ? "bg-accent"
+                    : "bg-line"
                 }`}
               />
             </div>
@@ -136,15 +164,24 @@ export default function BlogDetailPage() {
                     : "bg-status-rejected/10 border-status-rejected/20"
                 }`}
               >
-                <span className="font-medium">{r.action === "approve" ? "Approved" : "Rejected"}</span>
-                {r.comment && <span className="text-ink/70"> — {r.comment}</span>}
+                <span className="font-medium">
+                  {r.action === "approve" ? "Approved" : "Rejected"}
+                </span>
+                {r.comment && (
+                  <span className="text-ink/70"> — {r.comment}</span>
+                )}
               </div>
             ))}
           </div>
         )}
 
         <div className="mb-6">
-          <BlogForm blog={blog} readOnly={!canEdit} onSave={handleSaveEdits} saving={updateBlog.isPending} />
+          <BlogForm
+            blog={blog}
+            readOnly={!canEdit}
+            onSave={handleSaveEdits}
+            saving={updateBlog.isPending}
+          />
         </div>
 
         <div className="flex flex-wrap gap-2 border-t border-line pt-5">
@@ -159,7 +196,11 @@ export default function BlogDetailPage() {
               <Button disabled={busy} onClick={() => handleReview("approve")}>
                 Approve
               </Button>
-              <Button variant="danger" disabled={busy} onClick={() => setShowRejectBox(true)}>
+              <Button
+                variant="danger"
+                disabled={busy}
+                onClick={() => setShowRejectBox(true)}
+              >
                 Reject
               </Button>
             </>
@@ -172,7 +213,11 @@ export default function BlogDetailPage() {
           )}
 
           {canUnpublish && (
-            <Button variant="secondary" disabled={busy} onClick={() => unpublishBlog.mutate()}>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => unpublishBlog.mutate()}
+            >
               Unpublish
             </Button>
           )}
@@ -198,7 +243,11 @@ export default function BlogDetailPage() {
               >
                 Confirm reject
               </Button>
-              <Button variant="secondary" disabled={busy} onClick={() => setShowRejectBox(false)}>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => setShowRejectBox(false)}
+              >
                 Cancel
               </Button>
             </div>

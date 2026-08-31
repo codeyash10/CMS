@@ -9,13 +9,21 @@ export interface DashboardSummary {
   pendingReviewCount: number;
   pendingPublishCount: number;
   recentlyPublished: { id: string; title: string; publishedAt?: string }[];
-  recentActivity: { id: string; action: string; createdAt: string; entityId: string }[];
+  recentActivity: {
+    id: string;
+    action: string;
+    createdAt: string;
+    entityId: string;
+  }[];
 }
 
 export function useDashboardSummary(companyId: string | null) {
   return useQuery({
     queryKey: queryKeys.dashboardSummary(companyId),
-    queryFn: () => api.get<DashboardSummary>(`/api/dashboard/summary?companyId=${companyId}`),
+    queryFn: () =>
+      api.get<DashboardSummary>(
+        `/api/dashboard/summary?companyId=${companyId}`,
+      ),
     enabled: !!companyId,
   });
 }

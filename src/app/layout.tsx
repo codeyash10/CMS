@@ -29,7 +29,11 @@ export const metadata: Metadata = {
   description: "Blog workflow admin panel — draft, review, approve, publish.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"

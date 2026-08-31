@@ -20,7 +20,11 @@ export function useAuditLogs(companyId: string | null) {
   return useQuery({
     queryKey: queryKeys.auditLogs(companyId),
     queryFn: async () =>
-      (await api.get<{ logs: AuditLogRow[] }>(`/api/audit-logs?companyId=${companyId}`)).logs,
+      (
+        await api.get<{ logs: AuditLogRow[] }>(
+          `/api/audit-logs?companyId=${companyId}`,
+        )
+      ).logs,
     enabled: !!companyId,
   });
 }

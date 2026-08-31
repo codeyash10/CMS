@@ -21,14 +21,18 @@ function slugify(title: string) {
 
 export async function GET(req: NextRequest) {
   const user = getUserFromRequest(req);
-  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const companyId = req.nextUrl.searchParams.get("companyId");
   const status = req.nextUrl.searchParams.get("status");
   const authorId = req.nextUrl.searchParams.get("authorId");
 
   if (!companyId || !userCanAccessCompany(user, companyId)) {
-    return NextResponse.json({ error: "Forbidden for this company." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Forbidden for this company." },
+      { status: 403 },
+    );
   }
 
   let results = blogs.filter((b) => b.companyId === companyId);
@@ -42,20 +46,30 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const user = getUserFromRequest(req);
-  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   if (!hasPermission(user, "blog.create")) {
-    return NextResponse.json({ error: "You don't have permission to create blogs." }, { status: 403 });
+    return NextResponse.json(
+      { error: "You don't have permission to create blogs." },
+      { status: 403 },
+    );
   }
 
   const body = await req.json().catch(() => null);
   const parsed = createBlogSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: firstZodError(parsed.error) }, { status: 400 });
+    return NextResponse.json(
+      { error: firstZodError(parsed.error) },
+      { status: 400 },
+    );
   }
   const data = parsed.data;
 
   if (!userCanAccessCompany(user, data.companyId)) {
-    return NextResponse.json({ error: "Forbidden for this company." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Forbidden for this company." },
+      { status: 403 },
+    );
   }
 
   const now = new Date().toISOString();

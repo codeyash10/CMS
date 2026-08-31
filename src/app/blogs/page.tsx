@@ -24,7 +24,11 @@ const FILTERS: { label: string; value: BlogStatus | "" }[] = [
 export default function BlogsPage() {
   return (
     <AuthenticatedShell>
-      <Suspense fallback={<p className="px-4 py-8 text-sm text-ink/40 text-center">Loading…</p>}>
+      <Suspense
+        fallback={
+          <p className="px-4 py-8 text-sm text-ink/40 text-center">Loading…</p>
+        }
+      >
         <BlogsContent />
       </Suspense>
     </AuthenticatedShell>
@@ -36,14 +40,20 @@ function BlogsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const status = (searchParams.get("status") ?? "") as BlogStatus | "";
-  const { data: blogs = [], isLoading: loading } = useBlogs(activeCompanyId, status);
+  const { data: blogs = [], isLoading: loading } = useBlogs(
+    activeCompanyId,
+    status,
+  );
 
   return (
     <>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-ink">Blogs</h1>
         <RequirePermission permission="blog.create">
-          <Link href="/blogs/new" className={buttonVariants({ variant: "primary" })}>
+          <Link
+            href="/blogs/new"
+            className={buttonVariants({ variant: "primary" })}
+          >
             New post
           </Link>
         </RequirePermission>
@@ -53,12 +63,14 @@ function BlogsContent() {
         {FILTERS.map((f) => (
           <button
             key={f.value}
-            onClick={() => router.push(f.value ? `/blogs?status=${f.value}` : "/blogs")}
+            onClick={() =>
+              router.push(f.value ? `/blogs?status=${f.value}` : "/blogs")
+            }
             className={cn(
               "text-xs font-medium px-3 py-1.5 rounded-full transition-colors",
               status === f.value
                 ? "bg-ink text-canvas"
-                : "bg-panel border border-line text-ink/60 hover:border-accent"
+                : "bg-panel border border-line text-ink/60 hover:border-accent",
             )}
           >
             {f.label}
@@ -70,7 +82,9 @@ function BlogsContent() {
         {loading ? (
           <p className="px-4 py-8 text-sm text-ink/40 text-center">Loading…</p>
         ) : blogs.length === 0 ? (
-          <p className="px-4 py-8 text-sm text-ink/40 text-center">No blogs match this filter.</p>
+          <p className="px-4 py-8 text-sm text-ink/40 text-center">
+            No blogs match this filter.
+          </p>
         ) : (
           blogs.map((b) => (
             <Link
