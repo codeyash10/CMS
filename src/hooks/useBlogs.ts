@@ -340,3 +340,26 @@ export function useReviewBlog(id: string) {
     },
   });
 }
+
+/**
+ * Groups all workflow status mutations for a single blog so screens do not
+ * need to wire each status endpoint and its error state independently.
+ */
+export function useBlogStatusActions(id: string) {
+  const submitForReview = useSubmitForReview(id);
+  const review = useReviewBlog(id);
+  const publish = usePublishBlog(id);
+  const unpublish = useUnpublishBlog(id);
+
+  return {
+    submitForReview,
+    review,
+    publish,
+    unpublish,
+    error:
+      submitForReview.error ??
+      review.error ??
+      publish.error ??
+      unpublish.error,
+  };
+}

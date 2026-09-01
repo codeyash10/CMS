@@ -10,11 +10,8 @@ import { Textarea } from "@/components/ui/Input";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   useBlog,
+  useBlogStatusActions,
   useDeleteBlog,
-  usePublishBlog,
-  useReviewBlog,
-  useSubmitForReview,
-  useUnpublishBlog,
   useUpdateBlog,
 } from "@/hooks/useBlogs";
 import { ApiError } from "@/lib/api";
@@ -28,10 +25,7 @@ export default function BlogDetailPage() {
   const blogQuery = useBlog(id);
   const updateBlog = useUpdateBlog(id);
   const deleteBlog = useDeleteBlog();
-  const submitForReview = useSubmitForReview(id);
-  const reviewBlog = useReviewBlog(id);
-  const publishBlog = usePublishBlog(id);
-  const unpublishBlog = useUnpublishBlog(id);
+  const blogStatusActions = useBlogStatusActions(id);
   const [reviewComment, setReviewComment] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { showToast } = useToast();
@@ -40,10 +34,7 @@ export default function BlogDetailPage() {
     blogQuery.error ??
     updateBlog.error ??
     deleteBlog.error ??
-    submitForReview.error ??
-    reviewBlog.error ??
-    publishBlog.error ??
-    unpublishBlog.error;
+    blogStatusActions.error;
 
   async function save(values: BlogFormValues) {
     try {
@@ -72,7 +63,7 @@ export default function BlogDetailPage() {
 
   async function sendForReview() {
     try {
-      await submitForReview.mutateAsync();
+      await blogStatusActions.submitForReview.mutateAsync();
       showToast("Post submitted for review.");
     } catch (error) {
       showToast(
@@ -85,7 +76,7 @@ export default function BlogDetailPage() {
   async function approveBlog() {
     const comment = reviewComment.trim();
     try {
-      await reviewBlog.mutateAsync({
+      await blogStatusActions.review.mutateAsync({
         action: "approve",
         ...(comment ? { comment } : {}),
       });
@@ -103,7 +94,7 @@ export default function BlogDetailPage() {
     const comment = reviewComment.trim();
     if (!comment) return;
     try {
-      await reviewBlog.mutateAsync({ action: "reject", comment });
+      await blogStatusActions.review.mutateAsync({ action: "reject", comment });
       setReviewComment("");
       showToast("Post sent back with feedback.");
     } catch (error) {
@@ -116,7 +107,7 @@ export default function BlogDetailPage() {
 
   async function publish() {
     try {
-      await publishBlog.mutateAsync();
+      await blogStatusActions.publish.mutateAsync();
       showToast("Post published.");
     } catch (error) {
       showToast(
@@ -128,7 +119,7 @@ export default function BlogDetailPage() {
 
   async function unpublish() {
     try {
-      await unpublishBlog.mutateAsync();
+      await blogStatusActions.unpublish.mutateAsync();
       showToast("Post unpublished.");
     } catch (error) {
       showToast(
@@ -224,9 +215,9 @@ export default function BlogDetailPage() {
               <Button
                 variant="primary"
                 onClick={sendForReview}
-                disabled={submitForReview.isPending}
+                disabled={blogStatusActions.submitForReview.isPending}
               >
-                {submitForReview.isPending
+                {blogStatusActions.submitForReview.isPending
                   ? "Submitting..."
                   : "Send for review"}
               </Button>
@@ -245,14 +236,16 @@ export default function BlogDetailPage() {
                 <Button
                   variant="primary"
                   onClick={approveBlog}
-                  disabled={reviewBlog.isPending}
+                  disabled={blogStatusActions.review.isPending}
                 >
-                  {reviewBlog.isPending ? "Updating..." : "Approved"}
+                  {blogStatusActions.review.isPending ? "Updating..." : "Approved"}
                 </Button>
                 <Button
                   variant="danger"
                   onClick={rejectBlog}
-                  disabled={reviewBlog.isPending || !reviewComment.trim()}
+                  disabled={
+                    blogStatusActions.review.isPending || !reviewComment.trim()
+                  }
                 >
                   Rejected
                 </Button>
@@ -265,9 +258,9 @@ export default function BlogDetailPage() {
               <Button
                 variant="dark"
                 onClick={publish}
-                disabled={publishBlog.isPending}
+                disabled={blogStatusActions.publish.isPending}
               >
-                {publishBlog.isPending ? "Publishing..." : "Publish"}
+                {blogStatusActions.publish.isPending ? "Publishing..." : "Publish"}
               </Button>
             </div>
           )}
@@ -277,9 +270,11 @@ export default function BlogDetailPage() {
               <Button
                 variant="secondary"
                 onClick={unpublish}
-                disabled={unpublishBlog.isPending}
+                disabled={blogStatusActions.unpublish.isPending}
               >
-                {unpublishBlog.isPending ? "Unpublishing..." : "Unpublish"}
+                {blogStatusActions.unpublish.isPending
+                  ? "Unpublishing..."
+                  : "Unpublish"}
               </Button>
             </div>
           )}
