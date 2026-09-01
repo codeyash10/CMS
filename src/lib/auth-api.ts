@@ -6,7 +6,8 @@ import {
   setStoredAuthTokens,
 } from "@/lib/api";
 
-type BackendRole = "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "REVIEWER" | "USER" | string;
+type BackendRole =
+  "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "REVIEWER" | "USER" | string;
 
 type AuthResponse = {
   status: number;
@@ -20,7 +21,7 @@ type AuthResponse = {
   };
 };
 
-type MeResponse = {
+type CurrentUserResponse = {
   status: number;
   message: string;
   data: {
@@ -60,7 +61,11 @@ type MessageResponse = {
   data: { message: string };
 };
 
-const DEFAULT_COMPANY = { id: "co_crediple", name: "Crediple", slug: "crediple" };
+const DEFAULT_COMPANY = {
+  id: "co_crediple",
+  name: "Crediple",
+  slug: "crediple",
+};
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -109,9 +114,11 @@ function normalizeRole(role: BackendRole) {
   };
 }
 
-function toAuthUser(data: MeResponse["data"]): AuthUser {
+function toAuthUser(data: CurrentUserResponse["data"]): AuthUser {
   const role = normalizeRole(data.role);
-  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim() || data.email;
+  const name =
+    [data.firstName, data.lastName].filter(Boolean).join(" ").trim() ||
+    data.email;
 
   return {
     id: data.id,
@@ -124,11 +131,13 @@ function toAuthUser(data: MeResponse["data"]): AuthUser {
   };
 }
 
-async function authenticate(path: "/api/v1/auth/login" | "/api/v1/auth/register", input: LoginInput | RegisterInput) {
+async function authenticate(
+  path: "/api/v1/auth/login" | "/api/v1/auth/register",
+  input: LoginInput | RegisterInput,
+) {
   const response = await api.post<AuthResponse>(path, input);
   setStoredAuthTokens(response.data);
-  const me = await authApi.me();
-  return me;
+  return authApi.getCurrentUser();
 }
 
 export const authApi = {
@@ -138,9 +147,9 @@ export const authApi = {
   register(input: RegisterInput) {
     return authenticate("/api/v1/auth/register", input);
   },
-  async me() {
+  async getCurrentUser() {
     try {
-      return await this.fetchMe();
+      return await this.fetchCurrentUser();
     } catch (error) {
       if (!(error instanceof ApiError) || error.status !== 401) {
         throw error;
@@ -151,25 +160,30 @@ export const authApi = {
       }
       try {
         await this.refresh();
-        return await this.fetchMe();
+        return await this.fetchCurrentUser();
       } catch (refreshError) {
         clearStoredAuthTokens();
         throw refreshError;
       }
     }
   },
-  async fetchMe() {
-    const response = await api.get<MeResponse>("/api/v1/users/me");
+  async fetchCurrentUser() {
+    const response = await api.get<CurrentUserResponse>("/api/v1/users/me");
     return toAuthUser(response.data);
   },
   async refresh() {
     const refreshToken = getStoredRefreshToken();
-    if (!refreshToken) throw new Error("Your session has expired. Please sign in again.");
+    if (!refreshToken)
+      throw new Error("Your session has expired. Please sign in again.");
 
     try {
-      const response = await api.post<AuthResponse>("/api/v1/auth/refresh", undefined, {
-        Authorization: `Bearer ${refreshToken}`,
-      });
+      const response = await api.post<AuthResponse>(
+        "/api/v1/auth/refresh",
+        undefined,
+        {
+          Authorization: `Bearer ${refreshToken}`,
+        },
+      );
       setStoredAuthTokens(response.data);
     } catch (error) {
       clearStoredAuthTokens();

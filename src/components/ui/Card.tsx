@@ -10,7 +10,7 @@ export function Card({ className, hover, children, ...props }: CardProps) {
       className={cn(
         "rounded-xl bg-panel border border-line",
         hover && "transition-colors hover:border-accent",
-        className
+        className,
       )}
       {...props}
     >

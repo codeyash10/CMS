@@ -26,11 +26,7 @@ export type PermissionKey =
   | "audit.view_company";
 
 export type BlogStatus =
-  | "draft"
-  | "submitted_for_review"
-  | "approved"
-  | "rejected"
-  | "published";
+  "draft" | "submitted_for_review" | "approved" | "rejected" | "published";
 
 export interface Company {
   id: string;
@@ -149,7 +145,11 @@ export const roles: Role[] = [
   { id: "role_super_admin", key: "super_admin", label: "Super Admin" },
   { id: "role_company_admin", key: "company_admin", label: "Company Admin" },
   { id: "role_content_editor", key: "content_editor", label: "Content Editor" },
-  { id: "role_content_reviewer", key: "content_reviewer", label: "Content Reviewer" },
+  {
+    id: "role_content_reviewer",
+    key: "content_reviewer",
+    label: "Content Reviewer",
+  },
 ];
 
 export const users: User[] = [
@@ -201,9 +201,24 @@ export const users: User[] = [
 ];
 
 export const blogCategories: BlogCategory[] = [
-  { id: "cat_credit", companyId: "co_crediple", name: "Credit Tips", slug: "credit-tips" },
-  { id: "cat_news", companyId: "co_crediple", name: "Company News", slug: "company-news" },
-  { id: "cat_b1_news", companyId: "co_brandone", name: "Announcements", slug: "announcements" },
+  {
+    id: "cat_credit",
+    companyId: "co_crediple",
+    name: "Credit Tips",
+    slug: "credit-tips",
+  },
+  {
+    id: "cat_news",
+    companyId: "co_crediple",
+    name: "Company News",
+    slug: "company-news",
+  },
+  {
+    id: "cat_b1_news",
+    companyId: "co_brandone",
+    name: "Announcements",
+    slug: "announcements",
+  },
 ];
 
 const now = () => new Date().toISOString();
@@ -214,13 +229,15 @@ export const blogs: Blog[] = [
     companyId: "co_crediple",
     title: "5 Ways to Improve Your Credit Score This Year",
     slug: "5-ways-to-improve-your-credit-score-this-year",
-    excerpt: "Practical, no-nonsense steps anyone can take to build a stronger credit profile.",
+    excerpt:
+      "Practical, no-nonsense steps anyone can take to build a stronger credit profile.",
     content:
       "<p>Building good credit doesn't happen overnight, but a few consistent habits go a long way...</p>",
     categoryId: "cat_credit",
     tags: ["credit-score", "personal-finance"],
     metaTitle: "5 Ways to Improve Your Credit Score",
-    metaDescription: "Simple, practical steps to build a stronger credit profile this year.",
+    metaDescription:
+      "Simple, practical steps to build a stronger credit profile this year.",
     status: "published",
     authorId: "u_priya",
     reviews: [
@@ -242,7 +259,8 @@ export const blogs: Blog[] = [
     title: "Crediple Expands Leadership Team",
     slug: "crediple-expands-leadership-team",
     excerpt: "We're excited to welcome three new leaders to the Crediple team.",
-    content: "<p>Crediple continues to grow, and today we're announcing three new hires...</p>",
+    content:
+      "<p>Crediple continues to grow, and today we're announcing three new hires...</p>",
     categoryId: "cat_news",
     tags: ["company-news"],
     status: "submitted_for_review",
@@ -257,7 +275,8 @@ export const blogs: Blog[] = [
     title: "Understanding APR: A Plain-English Guide",
     slug: "understanding-apr-a-plain-english-guide",
     excerpt: "What APR actually means and why it matters when you borrow.",
-    content: "<p>APR shows up on nearly every loan offer, but it's often misunderstood...</p>",
+    content:
+      "<p>APR shows up on nearly every loan offer, but it's often misunderstood...</p>",
     categoryId: "cat_credit",
     tags: ["apr", "loans"],
     status: "approved",

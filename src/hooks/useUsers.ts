@@ -26,6 +26,7 @@ function normalizeUsersResponse(response: UsersResponse) {
 export function useUsers() {
   return useQuery({
     queryKey: queryKeys.users,
-    queryFn: async () => normalizeUsersResponse(await api.get<UsersResponse>("/api/v1/users")),
+    queryFn: async () =>
+      (await api.get<{ users: UserRow[] }>("/api/users")).users,
   });
 }

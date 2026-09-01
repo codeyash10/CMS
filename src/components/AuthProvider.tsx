@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi, type AuthUser } from "@/lib/auth-api";
@@ -39,21 +46,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return () => window.removeEventListener("storage", onStoreChange);
     },
     getStoredAccessToken,
-    () => AUTH_INITIALIZING
+    () => AUTH_INITIALIZING,
   );
   const authInitialized = authTokenSnapshot !== AUTH_INITIALIZING;
   const accessToken = authInitialized ? authTokenSnapshot : null;
 
-  const meQuery = useQuery({
+  const currentUserQuery = useQuery({
     queryKey: queryKeys.me,
-    queryFn: () => authApi.me(),
+    queryFn: () => authApi.getCurrentUser(),
     retry: false,
     enabled: authInitialized && Boolean(accessToken),
   });
 
-  const user = meQuery.data ?? null;
-  const loading = !authInitialized || (Boolean(accessToken) && meQuery.isLoading);
-  const resolvedActiveCompanyId = activeCompanyId ?? user?.companies[0]?.id ?? null;
+  const user = currentUserQuery.data ?? null;
+  const loading =
+    !authInitialized || (Boolean(accessToken) && currentUserQuery.isLoading);
+  const resolvedActiveCompanyId =
+    activeCompanyId ?? user?.companies[0]?.id ?? null;
 
   const loginMutation = useMutation({
     mutationFn: (input: { email: string; password: string }) => {
@@ -94,8 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(
-    (email: string, password: string) => loginMutation.mutateAsync({ email, password }).then(() => {}),
-    [loginMutation]
+    (email: string, password: string) =>
+      loginMutation.mutateAsync({ email, password }).then(() => {}),
+    [loginMutation],
   );
 
   const register = useCallback(
@@ -105,20 +115,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       firstName: string;
       lastName: string;
       role?: "admin" | "editor" | "reviewer" | "super_admin";
-    }) =>
-      registerMutation.mutateAsync(input).then(() => {}),
-    [registerMutation]
+    }) => registerMutation.mutateAsync(input).then(() => {}),
+    [registerMutation],
   );
 
-  const logout = useCallback(() => logoutMutation.mutateAsync().then(() => {}), [logoutMutation]);
+  const logout = useCallback(
+    () => logoutMutation.mutateAsync().then(() => {}),
+    [logoutMutation],
+  );
 
   const refresh = useCallback(async () => {
-    await meQuery.refetch();
-  }, [meQuery]);
+    await currentUserQuery.refetch();
+  }, [currentUserQuery]);
 
   const hasPermission = useCallback(
     (permission: string) => user?.permissions.includes(permission) ?? false,
-    [user]
+    [user],
   );
 
   const value = useMemo<AuthContextValue>(
@@ -133,7 +145,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refresh,
     }),
-    [user, loading, resolvedActiveCompanyId, hasPermission, login, register, logout, refresh]
+    [
+      user,
+      loading,
+      resolvedActiveCompanyId,
+      hasPermission,
+      login,
+      register,
+      logout,
+      refresh,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -33,7 +33,10 @@ export default function RegisterPage() {
     try {
       await register({ firstName, lastName, email, password, role });
     } catch (err) {
-      const message = err instanceof ApiError || err instanceof Error ? err.message : "Something went wrong. Try again.";
+      const message =
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Something went wrong. Try again.";
       setError(message);
     } finally {
       setSubmitting(false);
@@ -51,8 +54,9 @@ export default function RegisterPage() {
             Create your workspace access and start managing content.
           </h1>
           <p className="text-sm text-white/50 max-w-md leading-relaxed">
-            New users are registered with the default backend role. RBAC-based module access will be
-            applied from the user role returned by the backend.
+            New users are registered with the default backend role. RBAC-based
+            module access will be applied from the user role returned by the
+            backend.
           </p>
         </div>
 
@@ -61,13 +65,18 @@ export default function RegisterPage() {
 
       <div className="flex items-center justify-center px-6 py-16 bg-canvas">
         <div className="w-full max-w-sm">
-          <h2 className="font-heading text-2xl font-semibold text-ink mb-1">Sign up</h2>
+          <h2 className="font-heading text-2xl font-semibold text-ink mb-1">
+            Sign up
+          </h2>
           <p className="text-sm text-ink/60 mb-8">Create your CMS account.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-ink/80 mb-1.5" htmlFor="firstName">
+                <label
+                  className="block text-sm font-medium text-ink/80 mb-1.5"
+                  htmlFor="firstName"
+                >
                   First name
                 </label>
                 <Input
@@ -80,7 +89,10 @@ export default function RegisterPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink/80 mb-1.5" htmlFor="lastName">
+                <label
+                  className="block text-sm font-medium text-ink/80 mb-1.5"
+                  htmlFor="lastName"
+                >
                   Last name
                 </label>
                 <Input
@@ -95,7 +107,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink/80 mb-1.5" htmlFor="email">
+              <label
+                className="block text-sm font-medium text-ink/80 mb-1.5"
+                htmlFor="email"
+              >
                 Email
               </label>
               <Input
@@ -110,7 +125,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink/80 mb-1.5" htmlFor="password">
+              <label
+                className="block text-sm font-medium text-ink/80 mb-1.5"
+                htmlFor="password"
+              >
                 Password
               </label>
               <Input
@@ -125,14 +143,21 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink/80 mb-1.5" htmlFor="role">
+              <label
+                className="block text-sm font-medium text-ink/80 mb-1.5"
+                htmlFor="role"
+              >
                 Role
               </label>
               <select
                 id="role"
                 required
                 value={role}
-                onChange={(e) => setRole(e.target.value as (typeof ROLE_OPTIONS)[number]["value"])}
+                onChange={(e) =>
+                  setRole(
+                    e.target.value as (typeof ROLE_OPTIONS)[number]["value"],
+                  )
+                }
                 className="h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm text-ink outline-none transition-colors hover:border-accent/60 focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
                 <option value="" disabled>
@@ -159,7 +184,10 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-sm text-ink/60">
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-accent hover:text-accent-dark">
+            <Link
+              href="/login"
+              className="font-medium text-accent hover:text-accent-dark"
+            >
               Sign in
             </Link>
           </p>

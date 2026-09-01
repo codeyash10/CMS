@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -22,7 +22,7 @@
   --color-status-approved: var(--status-approved);
   --color-status-published: var(--status-published);
   --color-status-rejected: var(--status-rejected);
-}
+} */
 
 /* ============================================================
    LIGHT THEME (default)
@@ -89,12 +89,24 @@ body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    sans-serif;
 }
 
-*, *::before, *::after {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 ::selection {
@@ -126,20 +138,48 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
 }
 
-.rich-text-editor > * + * { margin-top: 0.9rem; }
-.rich-text-editor h2, .article-content h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
-.rich-text-editor h3, .article-content h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.45; }
-.rich-text-editor ul, .article-content ul { list-style: disc; padding-left: 1.5rem; }
-.rich-text-editor ol, .article-content ol { list-style: decimal; padding-left: 1.5rem; }
-.rich-text-editor blockquote, .article-content blockquote { border-left: 3px solid var(--accent); color: color-mix(in srgb, var(--ink) 70%, transparent); padding-left: 1rem; }
-.rich-text-editor img, .article-content img { border-radius: 0.5rem; max-width: 100%; }
-.article-content > * + * { margin-top: 1rem; }
-.article-content h1 { font-family: var(--font-jakarta), sans-serif; font-size: 1.5rem; font-weight: 600; line-height: 1.35; }
-.article-content, .rich-text-editor {
-  overflow-wrap: break-word;
-  word-break: break-word;
+.rich-text-editor > * + * {
+  margin-top: 0.9rem;
 }
-.article-content p, .rich-text-editor p {
-  margin: 0;
-  white-space: pre-wrap;
+.rich-text-editor h2,
+.article-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.rich-text-editor h3,
+.article-content h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.rich-text-editor ul,
+.article-content ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.rich-text-editor ol,
+.article-content ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.rich-text-editor blockquote,
+.article-content blockquote {
+  border-left: 3px solid var(--accent);
+  color: color-mix(in srgb, var(--ink) 70%, transparent);
+  padding-left: 1rem;
+}
+.rich-text-editor img,
+.article-content img {
+  border-radius: 0.5rem;
+  max-width: 100%;
+}
+.article-content > * + * {
+  margin-top: 1rem;
+}
+.article-content h1 {
+  font-family: var(--font-jakarta), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.35;
 }

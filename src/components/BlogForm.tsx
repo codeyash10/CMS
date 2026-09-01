@@ -10,7 +10,13 @@ import { uploadBlogImage } from "@/lib/image-upload";
 
 const MAX_IMAGE_SIZE_MB = 10;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
-const LIMITS = { title: 160, excerpt: 300, content: 50_000, metaTitle: 60, metaDescription: 160 };
+const LIMITS = {
+  title: 160,
+  excerpt: 300,
+  content: 50_000,
+  metaTitle: 60,
+  metaDescription: 160,
+};
 
 export interface BlogFormValues {
   title: string; slug: string; excerpt: string; content: string; coverImageKey: string[]; metaTitle: string; metaDescription: string;
@@ -50,12 +56,6 @@ export function BlogForm({ blog, readOnly, onSave, saving, formId, hideSubmit, s
   });
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  // Maps a freshly-uploaded image's display url -> its storage key, so the
-  // form can keep showing the real url as a preview while sending the key
-  // (not the url) to the backend on save. Pre-existing images (loaded with
-  // the blog, not re-uploaded this session) have no entry here and are
-  // sent back exactly as received.
-  const uploadedKeysRef = useRef<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [contentCharacterCount, setContentCharacterCount] = useState(() => toValues(blog).content.replace(/<[^>]*>/g, "").length);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,29 +64,54 @@ export function BlogForm({ blog, readOnly, onSave, saving, formId, hideSubmit, s
     window.open(previewHref, "_blank", "noopener,noreferrer");
   }
   useEffect(() => {
-    if (!readOnly) window.localStorage.setItem(draftKey, JSON.stringify(values));
+    if (!readOnly)
+      window.localStorage.setItem(draftKey, JSON.stringify(values));
   }, [draftKey, readOnly, values]);
-  function update<K extends keyof BlogFormValues>(key: K, value: BlogFormValues[K]) { setValues((current) => ({ ...current, [key]: value })); }
+  function update<K extends keyof BlogFormValues>(
+    key: K,
+    value: BlogFormValues[K],
+  ) {
+    setValues((current) => ({ ...current, [key]: value }));
+  }
   async function save(event: React.FormEvent) {
     event.preventDefault();
-    const missing = !values.title.trim() ? "Add a title before saving." : contentCharacterCount === 0 ? "Add blog content before saving." : null;
-    if (missing) { setFormError(missing); return; }
-    const tooLong = Object.entries(LIMITS).find(([key, limit]) => key === "content" ? contentCharacterCount > limit : values[key as keyof typeof LIMITS].length > limit);
-    if (tooLong) { setFormError(`${tooLong[0] === "metaTitle" ? "Meta title" : tooLong[0] === "metaDescription" ? "Meta description" : tooLong[0]} exceeds the ${tooLong[1]} character limit.`); return; }
+    const missing = !values.title.trim()
+      ? "Add a title before saving."
+      : contentCharacterCount === 0
+        ? "Add blog content before saving."
+        : null;
+    if (missing) {
+      setFormError(missing);
+      return;
+    }
+    const tooLong = Object.entries(LIMITS).find(([key, limit]) =>
+      key === "content"
+        ? contentCharacterCount > limit
+        : values[key as keyof typeof LIMITS].length > limit,
+    );
+    if (tooLong) {
+      setFormError(
+        `${tooLong[0] === "metaTitle" ? "Meta title" : tooLong[0] === "metaDescription" ? "Meta description" : tooLong[0]} exceeds the ${tooLong[1]} character limit.`,
+      );
+      return;
+    }
     setFormError(null);
-    const payloadValues: BlogFormValues = {
-      ...pickKnownFormFields(values),
-      coverImageKey: values.coverImageKey.map((url) => uploadedKeysRef.current[url] ?? url),
-    } as BlogFormValues;
+    const payloadValues = pickKnownFormFields(values) as BlogFormValues;
     await onSave(payloadValues);
     window.localStorage.removeItem(draftKey);
   }
   async function addImages(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []).filter((file) => file.type.startsWith("image/"));
+    const files = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith("image/"),
+    );
     if (!files.length) return;
-    const oversizedFile = files.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+    const oversizedFile = files.find(
+      (file) => file.size > MAX_IMAGE_SIZE_BYTES,
+    );
     if (oversizedFile) {
-      setUploadError(`${oversizedFile.name} is larger than ${MAX_IMAGE_SIZE_MB}MB.`);
+      setUploadError(
+        `${oversizedFile.name} is larger than ${MAX_IMAGE_SIZE_MB}MB.`,
+      );
       event.target.value = "";
       return;
     }
@@ -95,12 +120,14 @@ export function BlogForm({ blog, readOnly, onSave, saving, formId, hideSubmit, s
     setUploadError(null);
     try {
       const uploaded = await Promise.all(files.map(uploadBlogImage));
-      uploaded.forEach(({ key, url }) => {
-        uploadedKeysRef.current[url] = key;
-      });
-      update("coverImageKey", [...values.coverImageKey, ...uploaded.map((image) => image.url)]);
+      update("coverImageKey", [
+        ...values.coverImageKey,
+        ...uploaded.map((image) => image.url),
+      ]);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Could not upload image.");
+      setUploadError(
+        error instanceof Error ? error.message : "Could not upload image.",
+      );
     } finally {
       setUploading(false);
       event.target.value = "";
@@ -159,4 +186,22 @@ export function BlogForm({ blog, readOnly, onSave, saving, formId, hideSubmit, s
   </form>;
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) { return <div><label className="mb-1.5 block text-sm font-medium text-ink/80">{label}</label>{children}{hint && <p className="mt-1.5 text-xs text-ink/45">{hint}</p>}</div>; }
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-ink/80">
+        {label}
+      </label>
+      {children}
+      {hint && <p className="mt-1.5 text-xs text-ink/45">{hint}</p>}
+    </div>
+  );
+}
