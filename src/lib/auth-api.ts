@@ -21,7 +21,7 @@ type AuthResponse = {
   };
 };
 
-type MeResponse = {
+type CurrentUserResponse = {
   status: number;
   message: string;
   data: {
@@ -114,7 +114,7 @@ function normalizeRole(role: BackendRole) {
   };
 }
 
-function toAuthUser(data: MeResponse["data"]): AuthUser {
+function toAuthUser(data: CurrentUserResponse["data"]): AuthUser {
   const role = normalizeRole(data.role);
   const name =
     [data.firstName, data.lastName].filter(Boolean).join(" ").trim() ||
@@ -137,8 +137,7 @@ async function authenticate(
 ) {
   const response = await api.post<AuthResponse>(path, input);
   setStoredAuthTokens(response.data);
-  const me = await authApi.me();
-  return me;
+  return authApi.getCurrentUser();
 }
 
 export const authApi = {
@@ -148,9 +147,9 @@ export const authApi = {
   register(input: RegisterInput) {
     return authenticate("/api/v1/auth/register", input);
   },
-  async me() {
+  async getCurrentUser() {
     try {
-      return await this.fetchMe();
+      return await this.fetchCurrentUser();
     } catch (error) {
       if (!(error instanceof ApiError) || error.status !== 401) {
         throw error;
@@ -161,15 +160,15 @@ export const authApi = {
       }
       try {
         await this.refresh();
-        return await this.fetchMe();
+        return await this.fetchCurrentUser();
       } catch (refreshError) {
         clearStoredAuthTokens();
         throw refreshError;
       }
     }
   },
-  async fetchMe() {
-    const response = await api.get<MeResponse>("/api/v1/users/me");
+  async fetchCurrentUser() {
+    const response = await api.get<CurrentUserResponse>("/api/v1/users/me");
     return toAuthUser(response.data);
   },
   async refresh() {

@@ -51,16 +51,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authInitialized = authTokenSnapshot !== AUTH_INITIALIZING;
   const accessToken = authInitialized ? authTokenSnapshot : null;
 
-  const meQuery = useQuery({
+  const currentUserQuery = useQuery({
     queryKey: queryKeys.me,
-    queryFn: () => authApi.me(),
+    queryFn: () => authApi.getCurrentUser(),
     retry: false,
     enabled: authInitialized && Boolean(accessToken),
   });
 
-  const user = meQuery.data ?? null;
+  const user = currentUserQuery.data ?? null;
   const loading =
-    !authInitialized || (Boolean(accessToken) && meQuery.isLoading);
+    !authInitialized || (Boolean(accessToken) && currentUserQuery.isLoading);
   const resolvedActiveCompanyId =
     activeCompanyId ?? user?.companies[0]?.id ?? null;
 
@@ -125,8 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const refresh = useCallback(async () => {
-    await meQuery.refetch();
-  }, [meQuery]);
+    await currentUserQuery.refetch();
+  }, [currentUserQuery]);
 
   const hasPermission = useCallback(
     (permission: string) => user?.permissions.includes(permission) ?? false,

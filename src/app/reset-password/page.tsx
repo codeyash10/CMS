@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { authApi } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
+import { useResetPassword } from "@/hooks/useResetPassword";
+import { authApi } from "@/lib/auth-api";
 import { resetPasswordSchema } from "@/lib/schemas/auth";
 
 export default function ResetPasswordPage() {

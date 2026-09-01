@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+const strongPassword = z
+  .string()
+  .min(8, "Password must be at least 8 characters.")
+  .regex(/[a-z]/, "Password must include a lowercase letter.")
+  .regex(/[A-Z]/, "Password must include an uppercase letter.")
+  .regex(/[0-9]/, "Password must include a number.")
+  .regex(/[^A-Za-z0-9]/, "Password must include a special character.");
+
 export const loginSchema = z.object({
   email: z
     .string()
@@ -12,7 +20,7 @@ export const loginSchema = z.object({
 export const registerSchema = loginSchema.extend({
   firstName: z.string().trim().min(1, "First name is required."),
   lastName: z.string().trim().min(1, "Last name is required."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: strongPassword,
   role: z.enum(["admin", "editor", "reviewer", "super_admin"]).optional(),
 });
 
@@ -42,7 +50,7 @@ export const resetPasswordSchema = z
 export const changePasswordSchema = z
   .object({
     oldPassword: z.string().min(1, "Current password is required."),
-    newPassword: z.string().min(8, "Password must be at least 8 characters."),
+    newPassword: strongPassword,
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
