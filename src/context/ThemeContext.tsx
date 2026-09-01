@@ -10,7 +10,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="light"
+      defaultTheme="dark"
       enableSystem={false}
       storageKey="crediple-cms-theme"
       disableTransitionOnChange={false}
@@ -25,7 +25,7 @@ export function ThemeScript() {
 (function(){
   try {
     var stored = localStorage.getItem('crediple-cms-theme');
-    var theme = (stored === 'light' || stored === 'dark') ? stored : 'light';
+    var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
     document.documentElement.classList.remove('dark','light');
     document.documentElement.classList.add(theme);
   } catch(e){}
@@ -43,9 +43,12 @@ export function useTheme() {
   const { theme, setTheme, resolvedTheme } = useNextTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
-  const current = mounted ? (resolvedTheme ?? theme ?? "light") : "light";
+  const current = mounted ? (resolvedTheme ?? theme ?? "dark") : "dark";
 
   return {
     theme: current as "dark" | "light",

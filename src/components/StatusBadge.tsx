@@ -14,7 +14,7 @@ export function StatusBadge({ status }: { status: BlogStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium font-mono",
+        "inline-flex min-w-[6.75rem] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium font-mono",
         "bg-ink/5 text-ink/70 dark:bg-white/5",
       )}
     >

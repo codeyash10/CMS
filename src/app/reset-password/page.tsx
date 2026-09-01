@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api";
 import { useResetPassword } from "@/hooks/useResetPassword";
+import { authApi } from "@/lib/auth-api";
+import { resetPasswordSchema } from "@/lib/schemas/auth";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -15,16 +17,26 @@ export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const resetPassword = useResetPassword();
+  const [submitting, setSubmitting] = useState(false);
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setSubmitting(true);
     try {
-      await resetPassword.mutateAsync({
+      const {
+        email: validEmail,
+        otp: validOtp,
+        newPassword: validNewPassword,
+      } = resetPasswordSchema.parse({
         email,
         otp,
         newPassword,
         confirmPassword,
+      });
+      await authApi.resetPassword({
+        email: validEmail,
+        otp: validOtp,
+        newPassword: validNewPassword,
       });
       router.replace("/login?passwordReset=1");
     } catch (err) {
@@ -33,6 +45,8 @@ export default function ResetPasswordPage() {
           ? err.message
           : "Unable to reset your password. Try again.",
       );
+    } finally {
+      setSubmitting(false);
     }
   }
   return (
@@ -117,12 +131,8 @@ export default function ResetPasswordPage() {
               {error}
             </p>
           )}
-          <Button
-            type="submit"
-            disabled={resetPassword.isPending}
-            className="w-full"
-          >
-            {resetPassword.isPending ? "Resetting password…" : "Reset password"}
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Resetting password…" : "Reset password"}
           </Button>
         </form>
         <p className="mt-6 text-sm text-ink/60">

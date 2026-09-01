@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api";
+import { useToast } from "@/components/ToastProvider";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { showToast } = useToast();
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -21,11 +23,12 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(
+      const message =
         err instanceof ApiError || err instanceof Error
           ? err.message
-          : "Something went wrong. Try again.",
-      );
+          : "Something went wrong. Try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }

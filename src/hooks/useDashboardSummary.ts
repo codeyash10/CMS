@@ -17,13 +17,39 @@ export interface DashboardSummary {
   }[];
 }
 
-export function useDashboardSummary(companyId: string | null) {
+type DashboardSummaryResponse =
+  | DashboardSummary
+  | { status: number; message: string; data: DashboardSummary };
+
+function normalizeDashboardSummary(
+  response: DashboardSummaryResponse,
+): DashboardSummary {
+  const summary = "data" in response ? response.data : response;
+  return {
+    draftCount: summary.draftCount ?? 0,
+    pendingReviewCount: summary.pendingReviewCount ?? 0,
+    pendingPublishCount: summary.pendingPublishCount ?? 0,
+    recentlyPublished: summary.recentlyPublished ?? [],
+    recentActivity: summary.recentActivity ?? [],
+  };
+}
+
+export function useDashboardSummary(
+  companyId: string | null,
+  canFilterByCompany = false,
+) {
   return useQuery({
     queryKey: queryKeys.dashboardSummary(companyId),
-    queryFn: () =>
-      api.get<DashboardSummary>(
-        `/api/dashboard/summary?companyId=${companyId}`,
-      ),
-    enabled: !!companyId,
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (canFilterByCompany && companyId) params.set("companyId", companyId);
+      const query = params.toString();
+      return api
+        .get<DashboardSummaryResponse>(
+          `/api/v1/dashboard/summary${query ? `?${query}` : ""}`,
+        )
+        .then(normalizeDashboardSummary);
+    },
+    enabled: canFilterByCompany ? Boolean(companyId) : true,
   });
 }

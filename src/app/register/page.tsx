@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api";
+import { useToast } from "@/components/ToastProvider";
 
 const ROLE_OPTIONS = [
   { label: "Admin", value: "admin" },
@@ -24,6 +25,7 @@ export default function RegisterPage() {
     useState<(typeof ROLE_OPTIONS)[number]["value"]>("editor");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { showToast } = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,11 +35,12 @@ export default function RegisterPage() {
     try {
       await register({ firstName, lastName, email, password, role });
     } catch (err) {
-      setError(
-        err instanceof ApiError
+      const message =
+        err instanceof ApiError || err instanceof Error
           ? err.message
-          : "Something went wrong. Try again.",
-      );
+          : "Something went wrong. Try again.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +164,7 @@ export default function RegisterPage() {
                     e.target.value as (typeof ROLE_OPTIONS)[number]["value"],
                   )
                 }
-                className="h-10 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="h-10 w-full rounded-lg border border-line bg-panel px-3 text-sm text-ink outline-none transition-colors hover:border-accent/60 focus:border-accent focus:ring-2 focus:ring-accent/20"
               >
                 {ROLE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>

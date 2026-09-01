@@ -39,7 +39,7 @@ export const resetPasswordSchema = z
       .string()
       .trim()
       .regex(/^\d{6}$/, "Enter the 6-digit OTP sent to your email."),
-    newPassword: strongPassword,
+    newPassword: z.string().min(8, "Password must be at least 8 characters."),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

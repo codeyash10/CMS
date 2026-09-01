@@ -77,6 +77,10 @@ export async function PATCH(
   }
 
   Object.assign(blog, parsed.data);
+  if (parsed.data.coverImageUrl) {
+    blog.coverImageUrls = parsed.data.coverImageUrl;
+    blog.coverImageUrl = parsed.data.coverImageUrl[0];
+  }
   blog.updatedAt = new Date().toISOString();
 
   logAudit({

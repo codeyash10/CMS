@@ -23,18 +23,10 @@ export const AUTH_STORAGE_KEYS = {
  * Set NEXT_PUBLIC_API_BASE_URL when the backend is available; all API calls
  * will then use that host without changing individual screens or hooks.
  */
-function resolveApiBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (raw === undefined || raw === "") return "";
-  if (!/^https?:\/\//.test(raw)) {
-    throw new Error(
-      `Invalid NEXT_PUBLIC_API_BASE_URL "${raw}": must be a full http(s) URL.`,
-    );
-  }
-  return raw.replace(/\/$/, "");
-}
-
-const API_BASE_URL = resolveApiBaseUrl();
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(
+  /\/$/,
+  "",
+);
 
 export function getStoredAccessToken() {
   if (typeof window === "undefined") return null;
@@ -107,12 +99,15 @@ async function request<T>(
   isRetry = false,
 ): Promise<T> {
   const accessToken = getStoredAccessToken();
-  const isBackendRequest = Boolean(API_BASE_URL) && path.startsWith("/api/v1");
-  const res = await fetch(resolveApiUrl(path), {
+  const url = resolveApiUrl(path);
+  const isBackendRequest =
+    url.startsWith("http://") || url.startsWith("https://");
+  const isFormData = options.body instanceof FormData;
+  const res = await fetch(url, {
     ...options,
     credentials: isBackendRequest ? "omit" : "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(!isFormData ? { "Content-Type": "application/json" } : {}),
       ...(isBackendRequest ? { "ngrok-skip-browser-warning": "true" } : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(options.headers ?? {}),
@@ -159,6 +154,8 @@ export const api = {
       body: data ? JSON.stringify(data) : undefined,
       headers,
     }),
+  postForm: <T>(path: string, data: FormData) =>
+    request<T>(path, { method: "POST", body: data }),
   patch: <T>(path: string, data?: unknown) =>
     request<T>(path, {
       method: "PATCH",

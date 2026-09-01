@@ -4,85 +4,158 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
-import { StatusBadge } from "@/components/StatusBadge";
 import { BlogForm, BlogFormValues } from "@/components/BlogForm";
 import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Input";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   useBlog,
-  usePublishBlog,
-  useReviewBlog,
-  useSubmitForReview,
-  useUnpublishBlog,
+  useBlogStatusActions,
+  useDeleteBlog,
   useUpdateBlog,
 } from "@/hooks/useBlogs";
 import { ApiError } from "@/lib/api";
-
-const PIPELINE = [
-  "draft",
-  "submitted_for_review",
-  "approved",
-  "published",
-] as const;
+import type { BlogStatus } from "@/lib/mock-db";
+import { useToast } from "@/components/ToastProvider";
 
 export default function BlogDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user, hasPermission } = useAuth();
-  const [rejectComment, setRejectComment] = useState("");
-  const [showRejectBox, setShowRejectBox] = useState(false);
-
+  const { hasPermission } = useAuth();
   const blogQuery = useBlog(id);
   const updateBlog = useUpdateBlog(id);
-  const submitForReview = useSubmitForReview(id);
-  const reviewBlog = useReviewBlog(id);
-  const publishBlog = usePublishBlog(id);
-  const unpublishBlog = useUnpublishBlog(id);
+  const deleteBlog = useDeleteBlog();
+  const blogStatusActions = useBlogStatusActions(id);
+  const [reviewComment, setReviewComment] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { showToast } = useToast();
 
-  const busy =
-    updateBlog.isPending ||
-    submitForReview.isPending ||
-    reviewBlog.isPending ||
-    publishBlog.isPending ||
-    unpublishBlog.isPending;
+  const error =
+    blogQuery.error ??
+    updateBlog.error ??
+    deleteBlog.error ??
+    blogStatusActions.error;
 
-  const activeError =
-    submitForReview.error ??
-    reviewBlog.error ??
-    publishBlog.error ??
-    unpublishBlog.error ??
-    blogQuery.error;
-  const error = activeError
-    ? activeError instanceof ApiError
-      ? activeError.message
-      : "That action failed."
-    : null;
+  async function save(values: BlogFormValues) {
+    try {
+      await updateBlog.mutateAsync(values);
+      showToast("Draft saved.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not save the post.",
+        "error",
+      );
+    }
+  }
+
+  async function remove() {
+    try {
+      await deleteBlog.mutateAsync(id);
+      showToast("Post deleted.");
+      router.push("/blogs");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not delete the post.",
+        "error",
+      );
+    }
+  }
+
+  async function sendForReview() {
+    try {
+      await blogStatusActions.submitForReview.mutateAsync();
+      showToast("Post submitted for review.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not submit the post.",
+        "error",
+      );
+    }
+  }
+
+  async function approveBlog() {
+    const comment = reviewComment.trim();
+    try {
+      await blogStatusActions.review.mutateAsync({
+        action: "approve",
+        ...(comment ? { comment } : {}),
+      });
+      setReviewComment("");
+      showToast("Post approved.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not approve the post.",
+        "error",
+      );
+    }
+  }
+
+  async function rejectBlog() {
+    const comment = reviewComment.trim();
+    if (!comment) return;
+    try {
+      await blogStatusActions.review.mutateAsync({ action: "reject", comment });
+      setReviewComment("");
+      showToast("Post sent back with feedback.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not reject the post.",
+        "error",
+      );
+    }
+  }
+
+  async function publish() {
+    try {
+      await blogStatusActions.publish.mutateAsync();
+      showToast("Post published.");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not publish the post.",
+        "error",
+      );
+    }
+  }
+
+  async function unpublish() {
+    try {
+      await blogStatusActions.unpublish.mutateAsync();
+      showToast("Post unpublished.");
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Could not unpublish the post.",
+        "error",
+      );
+    }
+  }
 
   if (blogQuery.isLoading) {
     return (
       <AuthenticatedShell>
-        <p className="text-sm text-ink/40">Loading…</p>
+        <div className="space-y-4">
+          <div className="h-8 w-48 animate-pulse rounded bg-ink/5" />
+          <div className="h-80 animate-pulse rounded-xl border border-line bg-panel" />
+        </div>
       </AuthenticatedShell>
     );
   }
+
   const blog = blogQuery.data;
   if (!blog) {
     return (
       <AuthenticatedShell>
         <p className="text-sm text-status-rejected">
-          {error ?? "Post not found."}
+          {error instanceof ApiError || error instanceof Error
+            ? error.message
+            : "Blog not found."}
         </p>
       </AuthenticatedShell>
     );
   }
 
-  const isOwner = blog.authorId === user?.id;
-  const canEdit =
-    (isOwner &&
-      hasPermission("blog.edit_own") &&
-      ["draft", "rejected"].includes(blog.status)) ||
-    hasPermission("blog.edit_any");
-  const canSubmit =
-    isOwner &&
+  const canSubmitForReview =
     hasPermission("blog.submit_review") &&
     ["draft", "rejected"].includes(blog.status);
   const canReview =
@@ -91,169 +164,209 @@ export default function BlogDetailPage() {
     hasPermission("blog.publish") && blog.status === "approved";
   const canUnpublish =
     hasPermission("blog.publish") && blog.status === "published";
-
-  async function handleSaveEdits(values: BlogFormValues) {
-    try {
-      await updateBlog.mutateAsync(values);
-    } catch {
-      // surfaced via `error` above
-    }
-  }
-
-  async function handleReview(action: "approve" | "reject", comment?: string) {
-    try {
-      await reviewBlog.mutateAsync({ action, comment });
-      setShowRejectBox(false);
-      setRejectComment("");
-    } catch {
-      // surfaced via `error` above
-    }
-  }
-
-  const pipelineIndex =
-    blog.status === "rejected"
-      ? 0
-      : PIPELINE.indexOf(blog.status as (typeof PIPELINE)[number]);
+  const reviewFeedback = Array.isArray(blog.reviews)
+    ? blog.reviews.filter((review) => review.comment?.trim())
+    : [];
 
   return (
     <AuthenticatedShell>
-      <div className="max-w-2xl">
-        <button
-          onClick={() => router.push("/blogs")}
-          className="text-sm text-ink/50 hover:text-ink mb-4"
-        >
-          ← Back to blogs
-        </button>
-
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-semibold text-ink">
-            {blog.title || "Untitled post"}
-          </h1>
+      <div className="w-full">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <button
+              onClick={() => router.push("/blogs")}
+              className="mb-3 text-sm text-ink/50 hover:text-ink"
+            >
+              Back to blogs
+            </button>
+            <h1 className="text-xl font-semibold text-ink">Edit post</h1>
+            <p className="mt-1 text-sm text-ink/50">
+              Last updated {new Date(blog.updatedAt).toLocaleString()}
+            </p>
+          </div>
           <StatusBadge status={blog.status} />
         </div>
 
-        {/* Pipeline strip */}
-        <div className="flex items-center gap-1 mb-6">
-          {PIPELINE.map((stage, i) => (
-            <div key={stage} className="flex items-center flex-1">
-              <div
-                className={`h-1.5 flex-1 rounded-full ${
-                  i <= pipelineIndex && blog.status !== "rejected"
-                    ? "bg-accent"
-                    : "bg-line"
-                }`}
-              />
-            </div>
-          ))}
-        </div>
-
         {error && (
-          <p className="mb-4 text-sm text-status-rejected bg-status-rejected/10 border border-status-rejected/20 rounded-lg px-3 py-2">
-            {error}
+          <p className="mb-4 rounded-lg border border-status-rejected/20 bg-status-rejected/10 px-3 py-2 text-sm text-status-rejected">
+            {error instanceof ApiError || error instanceof Error
+              ? error.message
+              : "Could not save the post."}
           </p>
         )}
 
-        {blog.reviews.length > 0 && (
-          <div className="mb-6 space-y-2">
-            {blog.reviews.map((r) => (
-              <div
-                key={r.id}
-                className={`text-sm rounded-lg px-3.5 py-2.5 border ${
-                  r.action === "approve"
-                    ? "bg-status-approved/10 border-status-approved/20"
-                    : "bg-status-rejected/10 border-status-rejected/20"
-                }`}
-              >
-                <span className="font-medium">
-                  {r.action === "approve" ? "Approved" : "Rejected"}
-                </span>
-                {r.comment && (
-                  <span className="text-ink/70"> — {r.comment}</span>
-                )}
-              </div>
-            ))}
+        <BlogForm blog={blog} onSave={save} saving={updateBlog.isPending} />
+
+        <section className="mt-8 rounded-xl border border-line bg-panel p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-ink">
+                Workflow actions
+              </h2>
+              <p className="mt-1 text-sm text-ink/50">
+                Move this post through review and publish states.
+              </p>
+            </div>
+            <StatusBadge status={blog.status as BlogStatus} />
           </div>
-        )}
 
-        <div className="mb-6">
-          <BlogForm
-            blog={blog}
-            readOnly={!canEdit}
-            onSave={handleSaveEdits}
-            saving={updateBlog.isPending}
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-2 border-t border-line pt-5">
-          {canSubmit && (
-            <Button disabled={busy} onClick={() => submitForReview.mutate()}>
-              Submit for review
-            </Button>
+          {canSubmitForReview && (
+            <div className="mt-5">
+              <Button
+                variant="primary"
+                onClick={sendForReview}
+                disabled={blogStatusActions.submitForReview.isPending}
+              >
+                {blogStatusActions.submitForReview.isPending
+                  ? "Submitting..."
+                  : "Send for review"}
+              </Button>
+            </div>
           )}
 
-          {canReview && !showRejectBox && (
-            <>
-              <Button disabled={busy} onClick={() => handleReview("approve")}>
-                Approve
-              </Button>
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => setShowRejectBox(true)}
-              >
-                Reject
-              </Button>
-            </>
+          {canReview && (
+            <div className="mt-5 space-y-4">
+              <Textarea
+                value={reviewComment}
+                onChange={(event) => setReviewComment(event.target.value)}
+                rows={3}
+                placeholder="Add feedback for the author (included with approval or rejection)"
+              />
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="primary"
+                  onClick={approveBlog}
+                  disabled={blogStatusActions.review.isPending}
+                >
+                  {blogStatusActions.review.isPending ? "Updating..." : "Approved"}
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={rejectBlog}
+                  disabled={
+                    blogStatusActions.review.isPending || !reviewComment.trim()
+                  }
+                >
+                  Rejected
+                </Button>
+              </div>
+            </div>
           )}
 
           {canPublish && (
-            <Button disabled={busy} onClick={() => publishBlog.mutate()}>
-              Publish
-            </Button>
+            <div className="mt-5">
+              <Button
+                variant="dark"
+                onClick={publish}
+                disabled={blogStatusActions.publish.isPending}
+              >
+                {blogStatusActions.publish.isPending ? "Publishing..." : "Publish"}
+              </Button>
+            </div>
           )}
 
           {canUnpublish && (
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => unpublishBlog.mutate()}
-            >
-              Unpublish
-            </Button>
-          )}
-        </div>
-
-        {showRejectBox && (
-          <div className="mt-4 border border-line rounded-lg p-4">
-            <label className="block text-sm font-medium text-ink/80 mb-1.5">
-              Comment for the editor (required)
-            </label>
-            <textarea
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-line bg-panel px-3.5 py-2.5 text-sm outline-none focus:border-accent mb-3"
-              placeholder="What needs to change before this can be approved?"
-            />
-            <div className="flex gap-2">
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => handleReview("reject", rejectComment)}
-              >
-                Confirm reject
-              </Button>
+            <div className="mt-5">
               <Button
                 variant="secondary"
-                disabled={busy}
-                onClick={() => setShowRejectBox(false)}
+                onClick={unpublish}
+                disabled={blogStatusActions.unpublish.isPending}
               >
-                Cancel
+                {blogStatusActions.unpublish.isPending
+                  ? "Unpublishing..."
+                  : "Unpublish"}
               </Button>
             </div>
-          </div>
-        )}
+          )}
+
+          {reviewFeedback.length > 0 && (
+            <div className="mt-5 border-t border-line pt-5">
+              <h3 className="text-sm font-semibold text-ink">
+                Review feedback
+              </h3>
+              <div className="mt-3 space-y-3">
+                {reviewFeedback.map((review) => (
+                  <div
+                    key={review.id}
+                    className="rounded-lg border border-line bg-canvas px-3 py-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-medium capitalize text-ink">
+                        {review.action}
+                      </span>
+                      <span className="text-xs text-ink/45">
+                        {new Date(review.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-ink/65">
+                      {review.comment}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <div className="mt-8 border-t border-line pt-5">
+          <Button
+            variant="danger"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={deleteBlog.isPending}
+          >
+            Delete post
+          </Button>
+        </div>
       </div>
+
+      {isDeleteDialogOpen && (
+        <DeleteConfirmDialog
+          loading={deleteBlog.isPending}
+          onCancel={() => setIsDeleteDialogOpen(false)}
+          onConfirm={async () => {
+            await remove();
+            setIsDeleteDialogOpen(false);
+          }}
+        />
+      )}
     </AuthenticatedShell>
+  );
+}
+
+function DeleteConfirmDialog({
+  loading,
+  onCancel,
+  onConfirm,
+}: {
+  loading: boolean;
+  onCancel: () => void;
+  onConfirm: () => Promise<void>;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/55 px-4 py-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-blog-title"
+        className="w-full max-w-md rounded-2xl border border-line bg-panel p-5 shadow-xl"
+      >
+        <h2 id="delete-blog-title" className="text-lg font-semibold text-ink">
+          Delete this blog?
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-ink/60">
+          This action will permanently delete this blog. You won’t be able to
+          recover it afterward.
+        </p>
+
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel} disabled={loading}>
+            No
+          </Button>
+          <Button variant="danger" onClick={onConfirm} disabled={loading}>
+            {loading ? "Deleting..." : "Yes, delete it"}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

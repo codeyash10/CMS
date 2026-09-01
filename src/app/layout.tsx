@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ThemeProvider, ThemeScript } from "@/context/ThemeContext";
 import { QueryProvider } from "@/lib/queryClient";
+import { ToastProvider } from "@/components/ToastProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -46,7 +47,9 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider>
           <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <ToastProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </ToastProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

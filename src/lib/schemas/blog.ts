@@ -5,11 +5,7 @@ export const blogEditableFieldsSchema = z.object({
   slug: z.string().trim().optional(),
   excerpt: z.string().optional(),
   content: z.string().optional(),
-  coverImageUrl: z
-    .string()
-    .url("Enter a valid URL.")
-    .optional()
-    .or(z.literal("")),
+  coverImageUrl: z.array(z.string().min(1)).optional(),
   categoryId: z.string().optional(),
   tags: z.array(z.string()).optional(),
   metaTitle: z.string().optional(),
