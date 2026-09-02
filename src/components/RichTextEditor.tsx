@@ -81,10 +81,11 @@ export function RichTextEditor({
     setUploading(true);
     setUploadError(null);
     try {
+      const { url } = await uploadBlogImage(file);
       editor
         .chain()
         .focus()
-        .setImage({ src: await uploadBlogImage(file), alt: file.name })
+        .setImage({ src: url, alt: file.name })
         .run();
     } catch (error) {
       setUploadError(

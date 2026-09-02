@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { useDashboardSummary } from "@/hooks/useDashboardSummary";
+import { useBlogs } from "@/hooks/useBlogs";
 
 export default function DashboardPage() {
   const { activeCompanyId, user } = useAuth();

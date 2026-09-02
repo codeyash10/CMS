@@ -125,30 +125,19 @@ function toBackendPayload(input: CreateBlogInput | UpdateBlogInput) {
   const payload = { ...input };
   delete payload.categoryId;
   delete payload.tags;
+  // An empty slug means "auto-generate one" — sending "" trips the
+  // backend's slug-format validation instead of triggering that default.
+  if (!payload.slug?.trim()) delete payload.slug;
   return payload;
 }
-function useInvalidateBlogLists() {
-  const queryClient = useQueryClient();
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ["blogs"] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
-    queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
-  };
-}
-function replaceBlogInLists(
-  queryClient: ReturnType<typeof useQueryClient>,
-  blog: Blog,
-) {
-  queryClient
-    .getQueriesData<Blog[]>({ queryKey: ["blogs"] })
-    .forEach(([key, current]) => {
-      if (!Array.isArray(current)) return;
-      const status = key[2] as BlogStatus | undefined;
-      const next = current
-        .map((item) => (item.id === blog.id ? blog : item))
-        .filter((item) => !status || item.status === status);
-      queryClient.setQueryData(key, next);
-    });
+function useInvalidateBlogLists() { const queryClient = useQueryClient(); return () => { queryClient.invalidateQueries({ queryKey: ["blogs"] }); queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] }); queryClient.invalidateQueries({ queryKey: ["audit-logs"] }); }; }
+function replaceBlogInLists(queryClient: ReturnType<typeof useQueryClient>, blog: Blog) {
+  queryClient.getQueriesData<Blog[]>({ queryKey: ["blogs"] }).forEach(([key, current]) => {
+    if (!Array.isArray(current)) return;
+    const status = key[2] as BlogStatus | undefined;
+    const next = current.map((item) => item.id === blog.id ? blog : item).filter((item) => !status || item.status === status);
+    queryClient.setQueryData(key, next);
+  });
 }
 
 export function useBlogs(companyId: string | null, status?: BlogStatus | "") {
@@ -212,15 +201,16 @@ export function usePaginatedBlogs(
   });
 }
 
-export function useBlog(id: string) {
+export function useBlog(id?: string) {
+  const blogId = id?.trim() ?? "";
   return useQuery({
-    queryKey: queryKeys.blog(id),
+    queryKey: queryKeys.blog(blogId),
     queryFn: async () => {
       const response = await api.get<
         BackendItemResponse | BackendBlog | { blog?: BackendBlog }
-      >(`/api/v1/blogs/${id}`);
+      >(`/api/v1/blogs/${blogId}`);
       const payload = Array.isArray(response)
-        ? response.find((item) => item.id === id)
+        ? response.find((item) => item.id === blogId)
         : "blog" in response && response.blog
           ? response.blog
           : "data" in response && response.data && !Array.isArray(response.data)
@@ -229,7 +219,7 @@ export function useBlog(id: string) {
       if (!payload) throw new Error("Blog not found.");
       return normalizeBlog(payload as BackendBlog);
     },
-    enabled: Boolean(id),
+    enabled: Boolean(blogId),
   });
 }
 
@@ -270,19 +260,16 @@ export function useUpdateBlog(id: string) {
 }
 
 export function useDeleteBlog() {
-  const queryClient = useQueryClient();
-  const invalidateLists = useInvalidateBlogLists();
+  const queryClient = useQueryClient(); const invalidateLists = useInvalidateBlogLists();
   return useMutation({
-    mutationFn: (id: string) =>
-      api.delete<{
-        status: number;
-        message: string;
-        data: { id: string; deleted: boolean };
-      }>(`/api/v1/blogs/${id}`),
+    mutationFn: (id: string) => api.delete<{ status: number; message: string; data: { id: string; deleted: boolean } }>(`/api/v1/blogs/${id}`),
     onSuccess: (_result, id) => {
       queryClient.removeQueries({ queryKey: queryKeys.blog(id) });
+      // queryKey: ["blogs"] partial-matches both the flat useBlogs() cache
+      // (an array) and the usePaginatedBlogs() cache ({ blogs, pagination }
+      // — not an array). Only the former should be filtered here.
       queryClient.setQueriesData<Blog[]>({ queryKey: ["blogs"] }, (current) =>
-        current?.filter((item) => item.id !== id),
+        Array.isArray(current) ? current.filter((item) => item.id !== id) : current
       );
       invalidateLists();
     },

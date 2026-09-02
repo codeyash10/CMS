@@ -12,5 +12,7 @@ export const queryKeys = {
   dashboardSummary: (companyId?: string | null) =>
     ["dashboard-summary", companyId] as const,
   users: ["users"] as const,
-  auditLogs: (companyId?: string | null) => ["audit-logs", companyId] as const,
+  auditLogs: (companyId?: string | null, page = 1, limit = 10, entityType?: string, entityId?: string, userId?: string, action?: string) =>
+    ["audit-logs", companyId, page, limit, entityType, entityId, userId, action] as const,
+  companies: ["companies"] as const,
 };

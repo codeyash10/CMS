@@ -5,16 +5,16 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { ApiError } from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
+import { ApiError } from "@/lib/api";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -22,6 +22,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
+      showToast("Signed in successfully.");
     } catch (err) {
       const message =
         err instanceof ApiError || err instanceof Error

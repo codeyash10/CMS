@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { BlogForm, BlogFormValues } from "@/components/BlogForm";
@@ -21,7 +22,7 @@ import { useToast } from "@/components/ToastProvider";
 export default function BlogDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const blogQuery = useBlog(id);
   const updateBlog = useUpdateBlog(id);
   const deleteBlog = useDeleteBlog();
@@ -36,29 +37,18 @@ export default function BlogDetailPage() {
     deleteBlog.error ??
     blogStatusActions.error;
 
-  async function save(values: BlogFormValues) {
-    try {
-      await updateBlog.mutateAsync(values);
-      showToast("Draft saved.");
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Could not save the post.",
-        "error",
-      );
+  useEffect(() => {
+    if (blogQuery.error instanceof ApiError && blogQuery.error.status === 404) {
+      router.replace("/blogs");
     }
+  }, [blogQuery.error, router]);
+
+  async function save(values: BlogFormValues) {
+    try { await updateBlog.mutateAsync(values); showToast("Draft saved."); } catch { /* surfaced via the inline error banner below */ }
   }
 
   async function remove() {
-    try {
-      await deleteBlog.mutateAsync(id);
-      showToast("Post deleted.");
-      router.push("/blogs");
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Could not delete the post.",
-        "error",
-      );
-    }
+    try { await deleteBlog.mutateAsync(id); showToast("Post deleted."); router.replace("/blogs"); } catch (error) { showToast(error instanceof Error ? error.message : "Could not delete the post.", "error"); }
   }
 
   async function sendForReview() {
@@ -147,14 +137,20 @@ export default function BlogDetailPage() {
     return (
       <AuthenticatedShell>
         <p className="text-sm text-status-rejected">
-          {error instanceof ApiError || error instanceof Error
-            ? error.message
-            : "Blog not found."}
+          {blogQuery.error instanceof ApiError && blogQuery.error.status === 404
+            ? "Redirecting to blogs..."
+            : error instanceof ApiError || error instanceof Error
+              ? error.message
+              : "Blog not found."}
         </p>
       </AuthenticatedShell>
     );
   }
 
+  const isOwner = user?.id === blog.authorId;
+  const canEditOwnDraft =
+    isOwner && hasPermission("blog.edit_own") && ["draft", "rejected"].includes(blog.status);
+  const canEdit = hasPermission("blog.edit_any") || canEditOwnDraft;
   const canSubmitForReview =
     hasPermission("blog.submit_review") &&
     ["draft", "rejected"].includes(blog.status);
@@ -173,11 +169,8 @@ export default function BlogDetailPage() {
       <div className="w-full">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <button
-              onClick={() => router.push("/blogs")}
-              className="mb-3 text-sm text-ink/50 hover:text-ink"
-            >
-              Back to blogs
+            <button onClick={() => router.push("/blogs")} aria-label="Back to blogs" className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-ink/5 hover:text-ink">
+              <ArrowLeft className="h-4 w-4" />
             </button>
             <h1 className="text-xl font-semibold text-ink">Edit post</h1>
             <p className="mt-1 text-sm text-ink/50">
@@ -195,7 +188,13 @@ export default function BlogDetailPage() {
           </p>
         )}
 
-        <BlogForm blog={blog} onSave={save} saving={updateBlog.isPending} />
+        {!canEdit && (
+          <p className="mb-4 rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink/60">
+            You don&apos;t have permission to edit this post{blog.status === "published" ? " — it's published; only an admin can make changes." : "."}
+          </p>
+        )}
+
+        <BlogForm blog={blog} readOnly={!canEdit} onSave={save} saving={updateBlog.isPending} submitLabel="Edit blog" />
 
         <section className="mt-8 rounded-xl border border-line bg-panel p-5">
           <div className="flex items-center justify-between gap-3">
