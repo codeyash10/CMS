@@ -16,7 +16,9 @@ export default function AuditLogsPage() {
   const [action, setAction] = useState("");
   const canFilterByCompany = user?.role?.key === "super_admin";
 
-  const queryCompanyId = canFilterByCompany ? activeCompanyId : activeCompanyId;
+  const queryCompanyId = canFilterByCompany
+    ? activeCompanyId
+    : (user?.companyIds[0] ?? activeCompanyId);
   const { data, isLoading, error } = useAuditLogs(queryCompanyId, {
     page,
     limit: PAGE_SIZE,
@@ -25,7 +27,7 @@ export default function AuditLogsPage() {
   });
   // The audit-log API only returns entity ids, not titles — cross-reference
   // against the company's blogs so "blog" rows can show a name.
-  const { data: blogs } = useBlogs(activeCompanyId, "");
+  const { data: blogs } = useBlogs(queryCompanyId, "");
   const blogTitleById = useMemo(() => new Map((blogs ?? []).map((blog) => [blog.id, blog.title])), [blogs]);
 
   const logs = data?.logs ?? [];

@@ -25,7 +25,7 @@ function readDraft(draftKey: string): Partial<BlogFormValues> {
 export function DraftPreviewPage({ draftKey, blogId }: { draftKey: string; blogId?: string }) {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const blogQuery = useBlog(blogId ?? "");
+  const blogQuery = useBlog(blogId);
   const [draft, setDraft] = useState<Partial<BlogFormValues> | null>(() =>
     typeof window === "undefined" ? null : readDraft(draftKey)
   );

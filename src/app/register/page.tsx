@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ToastProvider";
 import { ApiError } from "@/lib/api";
 
 const ROLE_OPTIONS = [
@@ -16,6 +17,7 @@ const ROLE_OPTIONS = [
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const { showToast } = useToast();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -32,12 +34,14 @@ export default function RegisterPage() {
 
     try {
       await register({ firstName, lastName, email, password, role });
+      showToast("Account created successfully.");
     } catch (err) {
       const message =
         err instanceof ApiError || err instanceof Error
           ? err.message
           : "Something went wrong. Try again.";
       setError(message);
+      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }

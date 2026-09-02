@@ -72,7 +72,11 @@ export function BlogPreview({ post, contentCharacterCount }: { post: BlogPreview
 
           {coverImage && (
             <div className="mt-6 overflow-hidden rounded-2xl border border-white/8 bg-black/30">
-              <img src={coverImage} alt="" className="h-[22rem] w-full object-cover sm:h-[28rem]" />
+              <img
+                src={coverImage}
+                alt={post.title ? `${post.title} cover image` : "Blog cover image"}
+                className="h-[22rem] w-full object-cover sm:h-[28rem]"
+              />
             </div>
           )}
 

@@ -201,15 +201,16 @@ export function usePaginatedBlogs(
   });
 }
 
-export function useBlog(id: string) {
+export function useBlog(id?: string) {
+  const blogId = id?.trim() ?? "";
   return useQuery({
-    queryKey: queryKeys.blog(id),
+    queryKey: queryKeys.blog(blogId),
     queryFn: async () => {
       const response = await api.get<
         BackendItemResponse | BackendBlog | { blog?: BackendBlog }
-      >(`/api/v1/blogs/${id}`);
+      >(`/api/v1/blogs/${blogId}`);
       const payload = Array.isArray(response)
-        ? response.find((item) => item.id === id)
+        ? response.find((item) => item.id === blogId)
         : "blog" in response && response.blog
           ? response.blog
           : "data" in response && response.data && !Array.isArray(response.data)
@@ -218,7 +219,7 @@ export function useBlog(id: string) {
       if (!payload) throw new Error("Blog not found.");
       return normalizeBlog(payload as BackendBlog);
     },
-    enabled: Boolean(id),
+    enabled: Boolean(blogId),
   });
 }
 
