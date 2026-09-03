@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "./AuthProvider";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { KeyRound, LogOut, Menu, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", permission: null },
@@ -24,6 +24,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileCloseTimer = useRef<number | null>(null);
+
+  function cancelProfileClose() {
+    if (profileCloseTimer.current) {
+      window.clearTimeout(profileCloseTimer.current);
+      profileCloseTimer.current = null;
+    }
+  }
+
+  function scheduleProfileClose() {
+    cancelProfileClose();
+    profileCloseTimer.current = window.setTimeout(() => {
+      setProfileOpen(false);
+      profileCloseTimer.current = null;
+    }, 250);
+  }
 
   if (!user) return null;
 
@@ -112,7 +128,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             <div
               className="relative"
-              onMouseLeave={() => setProfileOpen(false)}
+              onMouseEnter={cancelProfileClose}
+              onMouseLeave={scheduleProfileClose}
             >
               <button
                 type="button"
@@ -128,6 +145,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div
                   role="menu"
                   aria-label="Profile menu"
+                  onMouseEnter={cancelProfileClose}
+                  onMouseLeave={scheduleProfileClose}
                   className="absolute right-0 z-30 mt-2 w-64 overflow-hidden rounded-xl border border-line bg-panel shadow-lg"
                 >
                   <div className="border-b border-line px-4 py-3">
@@ -151,7 +170,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={() => logout()}
+                      onClick={() => {
+                        cancelProfileClose();
+                        setProfileOpen(false);
+                        void logout();
+                      }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-ink/70 hover:bg-ink/5 hover:text-ink focus-visible:ring-2 focus-visible:ring-accent/40"
                     >
                       <LogOut className="h-4 w-4" aria-hidden="true" />
