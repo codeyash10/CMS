@@ -28,7 +28,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-canvas md:grid md:grid-cols-[280px_minmax(0,1fr)]">
+    <div
+      className="min-h-screen bg-canvas md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)]"
+      style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
+    >
       {drawerOpen && (
         <button
           aria-label="Close navigation"
@@ -38,15 +41,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-[#0c1a35] text-white transition-transform md:sticky md:top-0 md:h-screen md:w-auto md:self-start md:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-[#0c1a35] text-white transition-transform md:sticky md:top-0 md:h-screen md:w-[var(--sidebar-width)] md:self-start md:translate-x-0",
           drawerOpen && "translate-x-0",
         )}
       >
-        <div className="px-5 py-5 border-b border-white/10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">
-            Crediple
+        <div className="border-b border-white/10 px-5 py-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/crediple_light.png"
+            alt="Crediple"
+            className="h-7 w-auto max-w-full object-contain"
+          />
+          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">
+            Blog CMS
           </p>
-          <p className="font-heading font-semibold">Blog CMS</p>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -102,7 +110,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             )}
             <ThemeToggle />
-            <div className="relative">
+            <div
+              className="relative"
+              onMouseLeave={() => setProfileOpen(false)}
+            >
               <button
                 type="button"
                 aria-label="Open profile menu"
